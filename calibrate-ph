@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
-import atsci
 import sys
 import time
+
+from dtnsense import atsci
 
 STABILIZE_MINS = 2
 

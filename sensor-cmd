@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-import atsci
 import sys
+
+from dtnsense import atsci
 
 BOARDS = {
     "temp": atsci.TEMP,

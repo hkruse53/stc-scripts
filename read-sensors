@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-import atsci
 import datetime
+
+from dtnsense import atsci
 
 with atsci.AtSciSensor() as sensor:
     sensor.switch(atsci.TEMP)
