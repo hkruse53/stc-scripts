@@ -61,14 +61,14 @@ class Batcher:
 
     def check(self):
         while len(self.records) >= self.batch_size:
-            self.enqueue()
+            self.enqueue(self.batch_size)
 
-    def enqueue(self):
+    def enqueue(self, batch_size):
         if not self.BATCH_NEW_FILE.exists():
             self.handler.handle(self.formatter.format(
-                self.records[:self.batch_size]))
+                self.records[:batch_size]))
 
-        self.records = self.records[self.batch_size:]
+        self.records = self.records[batch_size:]
 
         with self.BATCH_NEW_FILE.open("w") as new:
             for record in self.records:
