@@ -84,3 +84,6 @@ class Batcher:
             buf.write("{}\n".format(record))
 
         self.check()
+
+    def flush(self):
+        self.enqueue(len(self.records))
