@@ -40,6 +40,14 @@ except IndexError:
         sys.argv[0]))
     sys.exit(1)
 
+try:
+    low = int(low)
+    mid = int(mid)
+    high = int(high)
+except ValueError:
+    print("error: arguments must be integers")
+    sys.exit(1)
+
 with atsci.AtSciSensor() as sensor:
     print("letting temperature stabilize for {} minute(s)".format(
         STABILIZE_MINS))
