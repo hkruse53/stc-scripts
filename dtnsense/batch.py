@@ -48,7 +48,6 @@ class Batcher:
 
         self.records = []
         self.load()
-        self.check()
 
     def load(self):
         if not self.BATCH_FILE.exists():

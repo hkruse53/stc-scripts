@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import os.path
+import select
 import sys
 import time
 
@@ -32,49 +33,135 @@ class Reader:
 
         return signed
 
-def main(argv):
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--conf", action="store", default="~/conf/site.conf",
-        help="path to configuration file (default: %(default)s)")
-    ap.add_argument("-d", "--delay", action="store", type=int,
-        help="seconds between readings (default: only read once)")
-    ap.add_argument("-z", "--gzip", action="store_true",
-        help="enable gzip compression of records batches (default: no)")
-    ap.add_argument("-n", "--dry-run", action="store_true",
-        help="don't send over DTN2, just print on stdout (default: no)")
-    ap.add_argument("-e", "--expiration", action="store", default=90 * 24 * 60 * 60,
-        help="set bundle expiration in seconds (default: %(default)s)")
-    ap.add_argument("-b", "--batch-size", action="store", type=int, default=96,
-        help="number of bundles to put in a batch (default: %(default)s)")
-    args = ap.parse_args(argv[1:])
+class Daemon:
+    def __init__(self, fifo_path, batcher, reader):
+        self.fifo_path = fifo_path
+        self.batcher = batcher
+        self.reader = reader
 
-    cfg = site.Config(os.path.expanduser(args.conf))
+    def read(self):
+        self.batcher.add(str(self.reader.read()))
 
-    if args.gzip:
-        formatter = batch.GzipFormatter()
-    else:
-        formatter = batch.PlainFormatter()
+    def __enter__(self):
+        try:
+            os.mkfifo(self.fifo_path)
+        except FileExistsError:
+            pass
 
-    if args.dry_run:
-        handler = batch.StdoutHandler()
-    else:
-        handler = batch.DTN2Handler(args.expiration)
+        self.fd = os.open(self.fifo_path, os.O_NONBLOCK | os.O_RDONLY)
 
-    batcher = batch.Batcher(formatter, handler, args.batch_size)
+        return self
 
-    def read_one():
-        batcher.add(str(reader.read()))
+    def __exit__(self, *args):
+        os.close(self.fd)
+        os.unlink(self.fifo_path)
 
-    with atsci.AtSciSensor() as sensor:
-        reader = Reader(cfg, sensor)
-
-        if args.delay is None:
-            read_one()
-            return
-
+    def loop(self, delay):
         while True:
-            read_one()
-            time.sleep(args.delay)
+            stop = time.time() + delay
+
+            while True:
+                remain = stop - time.time()
+
+                if remain <= 0:
+                    break
+
+                r, w, x = select.select([self.fd], [], [], remain)
+
+                # If no fds are ready for reading, then the timeout was reached.
+                if len(r) == 0:
+                    break
+
+                self.handle(os.read(self.fd, 1))
+
+            self.read()
+
+    def handle(self, msg):
+        if msg == b"F":
+            return self.batcher.flush()
+
+        raise ValueError("invalid message {}".format(msg))
+
+class Client:
+    def __init__(self, fifo_path):
+        self.fifo_path = fifo_path
+
+    def __enter__(self):
+        self.fd = os.open(self.fifo_path, os.O_NONBLOCK | os.O_WRONLY)
+        return self
+
+    def __exit__(self, *args):
+        os.close(self.fd)
+
+    def send(self, msg):
+        assert os.write(self.fd, msg) == len(msg)
+
+class Main:
+    FIFO_PATH = "/tmp/sensord.socket"
+
+    def __init__(self, argv):
+        self.args = self.parse(argv)
+        self.cfg = site.Config(os.path.expanduser(self.args.conf))
+
+        if self.args.gzip:
+            formatter = batch.GzipFormatter()
+        else:
+            formatter = batch.PlainFormatter()
+
+        if self.args.dry_run:
+            handler = batch.StdoutHandler()
+        else:
+            handler = batch.DTN2Handler(self.args.expiration)
+
+        self.batcher = batch.Batcher(formatter, handler, self.args.batch_size)
+
+    def run(self):
+        with atsci.AtSciSensor() as sensor:
+            reader = Reader(self.cfg, sensor)
+
+            if self.args.flush:
+                return self.flush()
+
+            self.batcher.check()
+
+            if self.args.delay is None:
+                return self.read(reader)
+            else:
+                return self.daemon(reader)
+
+    def flush(self):
+        with Client(self.FIFO_PATH) as client:
+            client.send(b"F")
+
+    def read(self, reader):
+        Daemon(self.FIFO_PATH, self.batcher, reader).read()
+
+    def daemon(self, reader):
+        with Daemon(self.FIFO_PATH, self.batcher, reader) as daemon:
+            try:
+                daemon.loop(self.args.delay)
+            except KeyboardInterrupt:
+                return
+
+    def parse(self, argv):
+        ap = argparse.ArgumentParser()
+
+        ap.add_argument("-c", "--conf", action="store", default="~/conf/site.conf",
+            help="path to configuration file (default: %(default)s)")
+        ap.add_argument("-d", "--delay", action="store", type=int,
+            help="seconds between readings (default: only read once)")
+        ap.add_argument("-z", "--gzip", action="store_true",
+            help="enable gzip compression of records batches (default: no)")
+        ap.add_argument("-n", "--dry-run", action="store_true",
+            help="don't send over DTN2, just print on stdout (default: no)")
+        ap.add_argument("-e", "--expiration", action="store", default=90 * 24 * 60 * 60,
+            help="set bundle expiration in seconds (default: %(default)s)")
+        ap.add_argument("-b", "--batch-size", action="store", type=int, default=96,
+            help="number of bundles to put in a batch (default: %(default)s)")
+        ap.add_argument("-f", "--flush", action="store_true",
+            help="flush any queued records")
+
+        return ap.parse_args(argv[1:])
 
 if __name__ == "__main__":
-    main(sys.argv)
+    Main(sys.argv).run()
