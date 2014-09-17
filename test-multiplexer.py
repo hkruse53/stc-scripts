@@ -30,7 +30,7 @@ try:
     for i in range(20):
         sensor.read()
 
-    cond = int(sensor.read().split(b",")[0].decode("ascii"))
+    cond = int(sensor.read().split(b",")[0])
     sensor.write("E")
 
     # third sensor -- pH
