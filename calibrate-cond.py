@@ -5,15 +5,11 @@ import datetime
 import time
 import atsci
 
-def calibrate(ph, cmd):
-    print("place sensor in the pH {} solution".format(ph))
+def calibrate(cond, cmd):
+    print("place sensor in {} solution".format(cond))
     input("press enter when ready")
 
-    print("adjusting temperature to {}°C".format(temp))
-    # the pH sensor supports up to 4 digits of precision
-    sensor.write("{:.4}".format(temp))
-
-    print("entering continuous mode for 2 minutes")
+    print("entering continuous mode for 5 minutes")
     sensor.write("C")
 
     start = time.time()
@@ -21,15 +17,17 @@ def calibrate(ph, cmd):
     while True:
         elapsed = time.time() - start
 
-        if elapsed > 2 * 60:
+        if elapsed > 5 * 60:
             break
 
-        print("{:3}s: {:5}pH".format(int(elapsed), float(sensor.read())))
+        print("{:4}s: {}".format(int(elapsed), sensor.read().decode("ascii")))
         time.sleep(1)
 
-    print("calibrating for pH {}... ".format(ph), end="")
+    print("calibrating for {}...".format(cond), end="")
     sensor.write(cmd)
     print("done")
+
+    sensor.write("E")
 
 class CalibrationSet:
     __slots__ = ("sensor_cmd", "sensor_resp", "high_cmd", "high_resp",
@@ -90,29 +88,12 @@ try:
     assert sensor.read().decode("utf8") == cal.sensor_resp
 
     # calibrate for dry sensor.
-    print("calibrating for dry sensor")
+    print("make sure the sensor is dry")
     input("press enter when ready")
     sensor.write("Z0")
     assert sensor.read().decode("utf8") == "dry cal"
 
-    # place sensor in high side calibration solution.
-    print("calibrating for high side: {}".format(cal.high_resp))
-    input("press enter when ready")
-    sensor.write("C")
-    print("waiting 5 minutes for sensor to stabilize...", end="")
-    time.sleep(5 * 60)
-    sensor.write(cal.high_cmd)
-    sensor.write("E")
-    print("done")
-
-    # place sensor in low side calibration solution.
-    print("calibrating for low side: {}".format(cal.low_resp))
-    input("press enter when ready")
-    sensor.write("C")
-    print("waiting 5 minutes for sensor to stabilize...", end="")
-    time.sleep(5 * 60)
-    sensor.write(cal.low_cmd)
-    sensor.write("E")
-    print("done")
+    calibrate(cal.high_resp, cal.high_cmd)
+    calibrate(cal.low_resp, cal.low_cmd)
 finally:
     gpio.cleanup()
