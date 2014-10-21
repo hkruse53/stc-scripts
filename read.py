@@ -5,6 +5,9 @@ import atsci
 import datetime
 import time
 
+# Wait 2 minutes for the temperature to stabilize.
+TEMP_STABILIZE_SECS = 2 * 60
+
 try:
     gpio.setmode(gpio.BOARD)
 
@@ -19,6 +22,8 @@ try:
     sensor = atsci.AtSciSensor("/dev/ttyAMA0")
 
     # first sensor -- temperature
+    time.sleep(TEMP_STABILIZE_SECS)
+    sensor.write("E")
     sensor.write("R")
     temp = float(sensor.read())
 

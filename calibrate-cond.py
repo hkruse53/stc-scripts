@@ -5,13 +5,13 @@ import atsci
 import sys
 import time
 
-WAIT_MINUTES = 2
+STABILIZE_MINS = 2
 
 def calibrate(cmd, cond):
     print("place sensor in {} solution".format(cond))
     input("press enter when ready")
 
-    print("entering continuous mode for {} minute(s)".format(WAIT_MINUTES))
+    print("entering continuous mode for {} minute(s)".format(STABILIZE_MINS))
     sensor.write("C,1")
 
     start = time.time()
@@ -19,7 +19,7 @@ def calibrate(cmd, cond):
     while True:
         elapsed = time.time() - start
 
-        if elapsed > WAIT_MINUTES * 60:
+        if elapsed > STABILIZE_MINS * 60:
             break
 
         print("{:4}s: {}".format(int(elapsed), sensor.read().decode("ascii")))
@@ -47,6 +47,22 @@ try:
     sensor = atsci.AtSciSensor("/dev/ttyAMA0")
 
     # first sensor -- temperature
+    print("letting temperature stabilize for {} minute(s)".format(
+        STABILIZE_MINS))
+    sensor.write("C")
+
+    start = time.time()
+
+    while True:
+        elapsed = time.time() - start
+
+        if elapsed > STABILIZE_MINS * 60:
+            break;
+
+        print("{:3}s: {}C".format(int(elapsed), float(sensor.read())))
+        time.sleep(1)
+
+    sensor.write("E")
     sensor.write("R")
     temp = float(sensor.read())
 
