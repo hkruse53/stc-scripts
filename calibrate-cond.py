@@ -35,20 +35,12 @@ probe = sys.argv[1]
 low = sys.argv[2]
 high = sys.argv[3]
 
-try:
-    gpio.setmode(gpio.BOARD)
-
-    gpio.setup(18, gpio.OUT)
-    gpio.setup(16, gpio.OUT)
-
-    gpio.output(18, gpio.LOW)
-    gpio.output(16, gpio.LOW)
-
-    sensor = atsci.AtSciSerial("/dev/ttyAMA0")
-
+with atsci.AtSciSensor() as sensor:
     # first sensor -- temperature
     print("letting temperature stabilize for {} minute(s)".format(
         STABILIZE_MINS))
+    gpio.output(18, gpio.LOW)
+    gpio.output(16, gpio.LOW)
     sensor.write("C")
 
     start = time.time()
@@ -88,5 +80,3 @@ try:
 
     calibrate("Cal,low", low)
     calibrate("Cal,high", high)
-finally:
-    gpio.cleanup()

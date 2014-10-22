@@ -14,17 +14,7 @@ def toggle(sensor):
 
     sensor.flush()
 
-try:
-    gpio.setmode(gpio.BOARD)
-
-    gpio.setup(18, gpio.OUT)
-    gpio.setup(16, gpio.OUT)
-
-    gpio.output(18, gpio.HIGH)
-    gpio.output(16, gpio.HIGH)
-
-    sensor = atsci.AtSciSerial("/dev/ttyAMA0")
-
+with atsci.AtSciSensor() as sensor:
     # second sensor -- conductivity
     gpio.output(18, gpio.LOW)
     gpio.output(16, gpio.HIGH)
@@ -34,5 +24,3 @@ try:
     gpio.output(18, gpio.HIGH)
     gpio.output(16, gpio.LOW)
     toggle(sensor)
-finally:
-    gpio.cleanup()
