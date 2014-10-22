@@ -32,9 +32,14 @@ def calibrate(cmd, ph):
     # exit continuous mode.
     sensor.write("C,0")
 
-low = sys.argv[1]
-mid = sys.argv[2]
-high = sys.argv[3]
+try:
+    low = sys.argv[1]
+    mid = sys.argv[2]
+    high = sys.argv[3]
+except IndexError:
+    print("Usage: {} LOW-SOLUTION MID-SOLUTION HIGH-SOLUTION".format(
+        sys.argv[0]))
+    sys.exit(1)
 
 with atsci.AtSciSensor() as sensor:
     print("letting temperature stabilize for {} minute(s)".format(

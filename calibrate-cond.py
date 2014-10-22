@@ -31,9 +31,14 @@ def calibrate(cmd, cond):
 
     sensor.write("C,0")
 
-probe = sys.argv[1]
-low = sys.argv[2]
-high = sys.argv[3]
+try:
+    probe = sys.argv[1]
+    low = sys.argv[2]
+    high = sys.argv[3]
+except IndexError:
+    print("Usage {} PROBE-K-VALUE LOW-SOLUTION HIGH-SOLUTION".format(
+        sys.argv[0]))
+    sys.exit(1)
 
 with atsci.AtSciSensor() as sensor:
     print("letting temperature stabilize for {} minute(s)".format(
