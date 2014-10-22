@@ -1,8 +1,8 @@
 import serial
 
 class AtSciSerial(serial.Serial):
-    def __init__(self, file):
-        super().__init__(file, 38400)
+    def __init__(self, tty):
+        super().__init__(tty, 38400)
         self.write("")
         self.flush()
 
