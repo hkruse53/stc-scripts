@@ -23,7 +23,7 @@ try:
     gpio.output(18, gpio.HIGH)
     gpio.output(16, gpio.HIGH)
 
-    sensor = atsci.AtSciSensor("/dev/ttyAMA0")
+    sensor = atsci.AtSciSerial("/dev/ttyAMA0")
 
     # second sensor -- conductivity
     gpio.output(18, gpio.LOW)

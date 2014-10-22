@@ -1,6 +1,6 @@
 import serial
 
-class AtSciSensor(serial.Serial):
+class AtSciSerial(serial.Serial):
     def __init__(self, file):
         super().__init__(file, 38400)
         self.write("")

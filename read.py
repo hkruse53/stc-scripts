@@ -19,7 +19,7 @@ try:
     gpio.output(18, gpio.LOW)
     gpio.output(16, gpio.LOW)
 
-    sensor = atsci.AtSciSensor("/dev/ttyAMA0")
+    sensor = atsci.AtSciSerial("/dev/ttyAMA0")
 
     # first sensor -- temperature
     time.sleep(TEMP_STABILIZE_SECS)
