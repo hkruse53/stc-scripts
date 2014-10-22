@@ -15,12 +15,8 @@ def toggle(sensor):
     sensor.flush()
 
 with atsci.AtSciSensor() as sensor:
-    # second sensor -- conductivity
-    gpio.output(18, gpio.LOW)
-    gpio.output(16, gpio.HIGH)
+    sensor.switch(atsci.COND)
     toggle(sensor)
 
-    # third sensor -- pH
-    gpio.output(18, gpio.HIGH)
-    gpio.output(16, gpio.LOW)
+    sensor.switch(atsci.PH)
     toggle(sensor)

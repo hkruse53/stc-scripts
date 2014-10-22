@@ -36,11 +36,9 @@ low = sys.argv[2]
 high = sys.argv[3]
 
 with atsci.AtSciSensor() as sensor:
-    # first sensor -- temperature
     print("letting temperature stabilize for {} minute(s)".format(
         STABILIZE_MINS))
-    gpio.output(18, gpio.LOW)
-    gpio.output(16, gpio.LOW)
+    sensor.switch(atsci.TEMP)
     sensor.write("C")
 
     start = time.time()
@@ -58,18 +56,14 @@ with atsci.AtSciSensor() as sensor:
     sensor.write("R")
     temp = float(sensor.read())
 
-    # second sensor -- conductivity
-    gpio.output(18, gpio.LOW)
-    gpio.output(16, gpio.HIGH)
-
     # Leave continuous mode and clear calibration.
+    sensor.switch(atsci.COND)
     sensor.write("C,0")
     sensor.write("Cal,clear");
 
     print("using probe {}".format(probe))
     sensor.write("K,{}".format(probe))
 
-    # Set up temperature compensation.
     print("adjusting temperature to {}°C".format(temp))
     sensor.write("T,{:.3}".format(temp))
 

@@ -2,6 +2,12 @@ import RPi.GPIO as gpio
 import serial
 
 DEFAULT_TTY = "/dev/ttyAMA0"
+A_PIN = 18
+B_PIN = 16
+
+TEMP = (0, 0)
+COND = (0, 1)
+PH = (1, 0)
 
 class AtSciSerial(serial.Serial):
     def __init__(self, tty):
@@ -27,6 +33,10 @@ class AtSciSerial(serial.Serial):
 
     def read(self):
         return b"".join(self._read_bytes())
+
+    def switch(self, sensor):
+        gpio.output(A_PIN, sensor[0])
+        gpio.output(B_PIN, sensor[1])
 
 class AtSciSensor:
     __slots__ = ["tty"]
