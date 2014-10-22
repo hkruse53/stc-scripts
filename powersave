@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# This file controls power to the USB/NIC chipset.
+BUSPOWER="/sys/devices/platform/bcm2708_usb/buspower"
+
+on() {
+    # NOTE: disable networking?
+    echo 0 >$BUSPOWER
+}
+
+off() {
+    echo 1 >$BUSPOWER
+    # NOTE: enable networking?
+}
+
+case "$1" in
+on)
+    on
+;;
+off)
+    off
+;;
+esac
