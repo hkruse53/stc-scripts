@@ -5,7 +5,7 @@ import atsci
 import sys
 import time
 
-STABILIZE_MINS = 0.1
+STABILIZE_MINS = 2
 
 def calibrate(cmd, ph):
     print("place sensor in the pH {} solution".format(ph))
