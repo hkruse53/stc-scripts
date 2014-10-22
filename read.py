@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import RPi.GPIO as gpio
+import atsci
 import datetime
 import time
-import atsci
 
 try:
     gpio.setmode(gpio.BOARD)
@@ -11,33 +11,31 @@ try:
     gpio.setup(18, gpio.OUT)
     gpio.setup(16, gpio.OUT)
 
+    # Set the pins before opening the serial device, so the garbage 0xff byte is
+    # sent deterministically.
+    gpio.output(18, gpio.LOW)
+    gpio.output(16, gpio.LOW)
+
     sensor = atsci.AtSciSensor("/dev/ttyAMA0")
 
     # first sensor -- temperature
-    gpio.output(18, gpio.LOW)
-    gpio.output(16, gpio.LOW)
     sensor.write("R")
     temp = float(sensor.read())
 
     # second sensor -- conductivity
     gpio.output(18, gpio.LOW)
     gpio.output(16, gpio.HIGH)
-    # the conductivity sensor requires temperature in the format TT.T, i,e., with
-    # 3 digits of precision
-    sensor.write("{:.3},C".format(temp))
+    # Set up temperature compensation.
+    sensor.write("T,{:.3}".format(temp))
 
-    # Take 20 readings for the sensor to become accurate.
-    for i in range(20):
-        sensor.read()
-
-    cond = int(sensor.read().split(b",")[0])
-    sensor.write("E")
+    sensor.write("R")
+    [cond, tds, sal, sg] = (float(x) for x in sensor.read().split(b","))
 
     # third sensor -- pH
     gpio.output(18, gpio.HIGH)
     gpio.output(16, gpio.LOW)
-    # the pH sensor supports up to 4 digits of precision
-    sensor.write("{:.4}".format(temp))
+    # Set up temperature compensation.
+    sensor.write("T,{:.3}".format(temp))
     sensor.write("R")
     ph = float(sensor.read())
 
