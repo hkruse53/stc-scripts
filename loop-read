@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo Usage: $0 SLEEP-TIME
+    echo
+    echo For example, to take a reading every 15 minutes, run
+    echo $0 15m
+
+    exit 1
+fi
+
+trap exit 0 INT
+
+while true; do
+    read-sensors
+    sleep "$1"
+done
