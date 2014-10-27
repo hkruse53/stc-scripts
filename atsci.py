@@ -17,10 +17,10 @@ class AtSciSerial(serial.Serial):
         # so send a carriage to flush any sensors that are listening for a
         # command.
         self.write("")
-        self.flush()
 
     def write(self, cmd):
         super().write("{}\r".format(cmd).encode("ascii"))
+        super().flush()
 
     def _read_bytes(self):
         while True:
