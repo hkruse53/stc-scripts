@@ -42,8 +42,7 @@ with atsci.AtSciSensor() as sensor:
         time.sleep(1)
 
     sensor.write("E")
-    sensor.write("R")
-    temp = float(sensor.read())
+    temp = float(sensor.ask("R"))
 
     # Leave continuous mode and clear calibration.
     sensor.switch(atsci.COND)

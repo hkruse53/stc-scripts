@@ -13,13 +13,11 @@ with atsci.AtSciSensor() as sensor:
 
     sensor.switch(atsci.TEMP)
     sensor.write("E")
-    sensor.write("R")
-    temp = float(sensor.read())
+    temp = float(sensor.ask("R"))
 
     sensor.switch(atsci.COND)
     sensor.write("T,{:.3}".format(temp))
-    sensor.write("R")
-    [cond, tds, sal, sg] = (float(x) for x in sensor.read().split(b","))
+    [cond, tds, sal, sg] = (float(x) for x in sensor.ask("R").split(b","))
 
     sensor.switch(atsci.PH)
     sensor.write("T,{:.3}".format(temp))
