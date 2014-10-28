@@ -5,12 +5,8 @@ import atsci
 import datetime
 import time
 
-# Wait 2 minutes for the temperature to stabilize.
-TEMP_STABILIZE_SECS = 2 * 60
-
 with atsci.AtSciSensor() as sensor:
     sensor.switch(atsci.TEMP)
-    time.sleep(TEMP_STABILIZE_SECS)
     temp = float(sensor.ask("R"))
 
     sensor.switch(atsci.COND)
