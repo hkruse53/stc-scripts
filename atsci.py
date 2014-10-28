@@ -38,6 +38,12 @@ class AtSciSerial(serial.Serial):
         gpio.output(A_PIN, sensor[0])
         gpio.output(B_PIN, sensor[1])
 
+    def ask(self, msg):
+        self.flushInput()
+        self.write(msg)
+
+        return self.read()
+
 class AtSciSensor:
     __slots__ = ["tty"]
 
