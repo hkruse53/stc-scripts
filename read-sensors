@@ -9,10 +9,8 @@ import time
 TEMP_STABILIZE_SECS = 2 * 60
 
 with atsci.AtSciSensor() as sensor:
-    time.sleep(TEMP_STABILIZE_SECS)
-
     sensor.switch(atsci.TEMP)
-    sensor.write("E")
+    time.sleep(TEMP_STABILIZE_SECS)
     temp = float(sensor.ask("R"))
 
     sensor.switch(atsci.COND)
