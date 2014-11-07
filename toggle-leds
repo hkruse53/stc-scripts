@@ -1,20 +1,32 @@
 #!/usr/bin/python3
 
 import atsci
+import sys
+
+def on(sensor):
+    sensor.write("L,1")
+
+def off(sensor):
+    sensor.write("L,0")
 
 def toggle(sensor):
     sensor.write("L,?")
 
     if sensor.read()[3] == ord('1'):
-        sensor.write("L,0")
+        off(sensor)
     else:
-        sensor.write("L,1")
+        on(sensor)
 
-    sensor.flush()
+FNS = {"on": on, "off": off}
+
+try:
+    fn = FNS[sys.argv[1]]
+except IndexError:
+    fn = toggle
 
 with atsci.AtSciSensor() as sensor:
     sensor.switch(atsci.COND)
-    toggle(sensor)
+    fn(sensor)
 
     sensor.switch(atsci.PH)
-    toggle(sensor)
+    fn(sensor)
