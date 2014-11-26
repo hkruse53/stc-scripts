@@ -1,0 +1,26 @@
+#!/bin/bash
+
+SSID=$1
+
+# Make sure the interface is up.
+sudo ip link set wlan0 up
+# Set up interface to be in adhoc/IBSS mode. This isn't supported by iw yet, so
+# it must be done with iwconfig.
+sudo iwconfig wlan0 mode ad-hoc
+# Drop any existing connection.
+sudo iw dev wlan0 ibss leave 2>/dev/null
+
+# Run this in the background before joining to avoid a race condition where the
+# join event is raised before the loop starts (so the loop never ends.)
+{
+    # Loop until the IBSS "joined" event is raised from the kernel.
+    iw event | while read line; do
+        [[ $line =~ joined ]] && break
+    done
+} &
+
+# Join the SSID on channel 1.
+sudo iw dev wlan0 ibss join "$SSID" 2412
+
+# Wait until we've actually joined (until the subshell above finishes.)
+wait
