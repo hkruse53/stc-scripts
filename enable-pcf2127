@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# Register RTC on the I2C bus with its address given in the datasheet.
 echo pcf2127 0x51 >/sys/class/i2c-adapter/i2c-1/new_device
 
+# Wait until time is copied to system time. It takes awhile for the kernel to
+# register the RTC, but it does eventually, so this must be in a loop.
 while :; do
     hwclock -s && break
 done
