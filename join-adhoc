@@ -14,9 +14,9 @@ sudo iw dev wlan0 ibss leave 2>/dev/null
 # join event is raised before the loop starts (so the loop never ends.)
 {
     # Loop until the IBSS "joined" event is raised from the kernel.
-    iw event | while read line; do
+    while read line; do
         [[ $line =~ joined ]] && break
-    done
+    done < <(iw event)
 } &
 
 # Join the SSID on channel 1.
