@@ -7,12 +7,15 @@ if [[ -z $SSID ]]; then
     exit 1
 fi
 
+# Consider beacon frames from the given SSID.
+FILTER="wlan.fc.subtype == 8 && wlan_mgt.ssid == \"$SSID\""
+
 # Create the monitor interface and bring it up.
 sudo iw dev wlan0 interface add mon0 type monitor
 sudo ip link set mon0 up
 
-# Wait for the first beacon.
-tshark -i mon0 -l -Y "wlan_mgt.ssid == \"$SSID\"" 2>/dev/null | head -1 >/dev/null
+# Wait for the first matching frame.
+tshark -i mon0 -l -Y "$FILTER" 2>/dev/null | head -1 >/dev/null
 
 # Shut down the monitor and delete it.
 sudo ip link set mon0 down
