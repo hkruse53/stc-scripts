@@ -15,7 +15,7 @@ iw dev wlan0 interface add mon0 type monitor
 ip link set mon0 up
 
 # Wait for the first matching frame.
-sudo -u pi tshark -i mon0 -l -Y "$FILTER" | head -1 >/dev/null
+sudo -u "#$SUDO_UID" tshark -i mon0 -l -Y "$FILTER" | head -1 >/dev/null
 
 # Shut down the monitor and delete it.
 ip link set mon0 down
