@@ -15,12 +15,7 @@ sudo iwconfig wlan0 mode ad-hoc
 
 # Run this in the background before joining to avoid a race condition where the
 # join event is raised before the loop starts (so the loop never ends.)
-{
-    # Loop until the IBSS "joined" event is raised from the kernel.
-    while read line; do
-        [[ $line =~ "new station" ]] && break
-    done < <(iw event)
-} &
+wait-iw-event "new station" &
 
 # Join the SSID on channel 1 and wait until associated.
 sudo iwconfig wlan0 essid "$SSID" channel 1

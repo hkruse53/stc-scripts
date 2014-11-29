@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+    echo Usage $0 EVENT
+    exit 1
+fi
+
+# Loop until the given event is raised from the kernel.
+while read line; do
+    [[ $line =~ $1 ]] && break
+done < <(iw event)
