@@ -2,6 +2,11 @@
 
 SSID=$1
 
+if [[ -z $SSID ]]; then
+    echo Usage: $1 SSID
+    exit 1
+fi
+
 # Make sure the interface is up.
 sudo ip link set wlan0 up
 # Set up interface to be in adhoc/IBSS mode. This isn't supported by iw yet, so
