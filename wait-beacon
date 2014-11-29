@@ -2,6 +2,11 @@
 
 SSID=$1
 
+if [[ -z $SSID ]]; then
+    echo Usage: $0 SSID
+    exit 1
+fi
+
 # Create the monitor interface and bring it up.
 sudo iw dev wlan0 interface add mon0 type monitor
 sudo ip link set mon0 up
