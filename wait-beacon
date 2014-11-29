@@ -11,12 +11,12 @@ fi
 FILTER="wlan.fc.subtype == 8 && wlan_mgt.ssid == \"$SSID\""
 
 # Create the monitor interface and bring it up.
-sudo iw dev wlan0 interface add mon0 type monitor
-sudo ip link set mon0 up
+iw dev wlan0 interface add mon0 type monitor
+ip link set mon0 up
 
 # Wait for the first matching frame.
-tshark -i mon0 -l -Y "$FILTER" 2>/dev/null | head -1 >/dev/null
+sudo -u pi tshark -i mon0 -l -Y "$FILTER" | head -1 >/dev/null
 
 # Shut down the monitor and delete it.
-sudo ip link set mon0 down
-sudo iw dev mon0 del
+ip link set mon0 down
+iw dev mon0 del
