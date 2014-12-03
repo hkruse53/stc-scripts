@@ -3,7 +3,7 @@
 SSID=$1
 
 if [[ -z $SSID ]]; then
-    echo Usage: $1 SSID
+    echo Usage: $0 SSID
     exit 1
 fi
 
