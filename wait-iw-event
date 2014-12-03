@@ -9,3 +9,7 @@ fi
 while read line; do
     [[ $line =~ $1 ]] && break
 done < <(iw event)
+
+# Manually SIGPIPE the process substitution, since breaking out of the loop
+# doesn't do it.
+pkill -PIPE -P $!
