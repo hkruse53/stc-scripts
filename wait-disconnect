@@ -1,0 +1,6 @@
+#!/bin/bash
+
+while :; do
+    arping -I wlan0 -f -w 5 10.42.0.1 || break
+    sleep 15s
+done

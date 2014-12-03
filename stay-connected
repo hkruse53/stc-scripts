@@ -1,0 +1,16 @@
+#!/bin/bash
+
+SSID=$1
+
+if [[ -z $SSID ]]; then
+    echo Usage: $1 SSID
+    exit 1
+fi
+
+trap exit TERM INT
+
+while :; do
+    wait-beacon "$1"
+    join-adhoc "$1"
+    wait-disconnect
+done
