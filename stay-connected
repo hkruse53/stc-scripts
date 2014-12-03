@@ -10,7 +10,7 @@ fi
 trap exit TERM INT
 
 while :; do
-    wait-beacon "$1"
-    join-adhoc "$1"
+    wait-beacon "$1" || continue
+    join-adhoc "$1" || continue
     wait-disconnect
 done
