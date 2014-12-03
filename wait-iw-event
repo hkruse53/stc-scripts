@@ -10,6 +10,5 @@ while read line; do
     [[ $line =~ $1 ]] && break
 done < <(iw event)
 
-# Manually SIGPIPE the process substitution, since breaking out of the loop
-# doesn't do it.
-pkill -PIPE -P $!
+# Manually kill iw, since breaking out of the loop doesn't.
+pkill -P $!

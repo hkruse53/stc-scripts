@@ -16,8 +16,8 @@ while read line; do
     [[ $line =~ "($SSID)" ]] && break;
 done < <(tcpdump -l -i mon0 "(type mgt subtype beacon)" 2>/dev/null)
 
-# Send tcpdump SIGPIPE manually, since it may not get it from loop breaking.
-pkill -PIPE -P $!
+# Manually kill tcpdump, since the loop may not.
+pkill -P $!
 
 # Shut down the monitor and delete it.
 ip link set mon0 down
