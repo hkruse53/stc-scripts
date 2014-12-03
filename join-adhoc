@@ -12,13 +12,5 @@ ip link set wlan0 up
 # Set up interface to be in adhoc/IBSS mode. This isn't supported by iw yet, so
 # it must be done with iwconfig.
 iwconfig wlan0 mode ad-hoc
-
-# Run this in the background before joining to avoid a race condition where the
-# join event is raised before the loop starts (so the loop never ends.)
-timeout 10 wait-iw-event "new station" &
-
 # Join the SSID on channel 1.
 iwconfig wlan0 essid "$SSID" channel 1
-
-# If the timeout expires, consider that an error.
-wait -n || exit 1

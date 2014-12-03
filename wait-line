@@ -1,0 +1,13 @@
+#!/bin/bash
+
+FIFO=$1
+REGEX=$2
+
+if [[ -z $FIFO || -z $REGEX ]]; then
+    echo Usage: $0 FIFO REGEX
+    exit 1
+fi
+
+while read line; do
+    [[ $line =~ $REGEX ]] && break
+done <"$FIFO"
