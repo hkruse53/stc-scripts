@@ -1,0 +1,3 @@
+#!/bin/bash
+
+PATH=~pi/bin:$PATH exec bash -c "$1"
