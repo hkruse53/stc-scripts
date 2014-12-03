@@ -7,15 +7,17 @@ if [[ -z $SSID ]]; then
     exit 1
 fi
 
-# Consider beacon frames from the given SSID.
-FILTER="wlan.fc.subtype == 8 && wlan_mgt.ssid == \"$SSID\""
-
 # Create the monitor interface and bring it up.
 iw dev wlan0 interface add mon0 type monitor
 ip link set mon0 up
 
-# Wait for the first matching frame.
-sudo -u "#$SUDO_UID" tshark -i mon0 -l -Y "$FILTER" | head -1 >/dev/null
+# Wait for the first beacon frame from the given SSID.
+while read line; do
+    [[ $line =~ "($SSID)" ]] && break;
+done < <(tcpdump -l -i mon0 "(type mgt subtype beacon)" 2>/dev/null)
+
+# Send tcpdump SIGPIPE manually, since it may not get it from loop breaking.
+pkill -PIPE -P $!
 
 # Shut down the monitor and delete it.
 ip link set mon0 down
