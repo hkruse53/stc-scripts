@@ -12,6 +12,7 @@ fi
 trap exit 0 INT
 
 while true; do
-    read-sensors
+    dtnsend -s dtn://pi.dtn -d dtn://yellow.dtn -t m -p "$(read-sensors)" \
+        -e 5184000
     sleep "$1"
 done
