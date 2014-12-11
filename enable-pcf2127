@@ -6,5 +6,6 @@ echo pcf2127 0x51 >/sys/class/i2c-adapter/i2c-1/new_device
 # Wait until time is copied to system time. It takes awhile for the kernel to
 # register the RTC, but it does eventually, so this must be in a loop.
 while :; do
+    sleep 5s
     hwclock -s && break
 done
