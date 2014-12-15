@@ -16,7 +16,10 @@ trap exit INT TERM
 while :; do
     wait-beacon "$SSID" || continue
 
-    timeout 20 wait-line "new station" <&"${IW[0]}" &
+    coproc WAIT {
+        timeout 20 wait-line "new station"
+    } <&${IW[0]}
+
     join-adhoc "$SSID" || continue
     wait -n || continue
 
