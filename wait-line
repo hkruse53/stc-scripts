@@ -8,5 +8,7 @@ if [[ -z $REGEX ]]; then
 fi
 
 while read line; do
-    [[ $line =~ $REGEX ]] && break
+    [[ $line =~ $REGEX ]] && exit 0
 done
+
+exit 1
