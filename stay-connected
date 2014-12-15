@@ -7,31 +7,18 @@ if [[ -z $SSID ]]; then
     exit 1
 fi
 
-IW_DIR=$(mktemp -d)
-IW=$IW_DIR/iw
-mkfifo "$IW"
-
-iw event >"$IW" &
-IW_PID=$!
-
-finish() {
-    kill -PIPE "$IW_PID"
-    wait -n "$IW_PID"
-
-    rm -r "$IW_DIR"
-    exit
+coproc IW {
+    iw event
 }
 
-trap finish EXIT TERM INT
+trap exit EXIT
 
 while :; do
     wait-beacon "$SSID" || continue
 
-    timeout 20 wait-line "$IW" "new station" &
-    WAIT_PID=$!
-
+    timeout 20 wait-line "new station" <&"${IW[0]}" &
     join-adhoc "$SSID" || continue
-    wait -n "$WAIT_PID" || continue
+    wait -n || continue
 
     wait-disconnect
 done

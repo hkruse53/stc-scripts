@@ -7,20 +7,10 @@ if [[ -z $SSID ]]; then
     exit 1
 fi
 
-DUMP_DIR=$(mktemp -d)
-DUMP_FIFO=$DUMP_DIR/tcpdump
-mkfifo "$DUMP_FIFO"
-
 finish() {
-    kill -PIPE "$DUMP_PID"
-    wait -n "$DUMP_PID"
-
-    rm -r "$DUMP_DIR"
-
     # Shut down the monitor and delete it.
     ip link set mon0 down
     iw dev mon0 del
-
     exit
 }
 
@@ -30,8 +20,9 @@ trap finish EXIT
 iw dev wlan0 interface add mon0 type monitor || exit 1
 ip link set mon0 up
 
-tcpdump -l -i mon0 "(type mgt subtype beacon)" 2>/dev/null >"$DUMP_FIFO" &
-DUMP_PID=$!
+coproc DUMP {
+    tcpdump -l -i mon0 "(type mgt subtype beacon)" 2>/dev/null
+}
 
 # Wait for the first beacon frame from the given SSID.
-wait-line "$DUMP_FIFO" "($SSID)"
+wait-line "($SSID)" <&${DUMP[0]}
