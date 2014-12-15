@@ -11,7 +11,7 @@ coproc IW {
     iw event
 }
 
-trap exit EXIT
+trap exit INT TERM
 
 while :; do
     wait-beacon "$SSID" || continue
