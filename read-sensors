@@ -8,11 +8,11 @@ with atsci.AtSciSensor() as sensor:
     temp = float(sensor.ask("R"))
 
     sensor.switch(atsci.COND)
-    sensor.write("T,{:.3}".format(temp))
+    sensor.write("T,{:.3f}".format(temp))
     [cond, tds, sal, sg] = (float(x) for x in sensor.ask("R").split(b","))
 
     sensor.switch(atsci.PH)
-    sensor.write("T,{:.3}".format(temp))
+    sensor.write("T,{:.3f}".format(temp))
     ph = float(sensor.ask("R"))
 
     now = datetime.datetime.now()
