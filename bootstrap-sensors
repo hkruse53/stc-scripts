@@ -4,3 +4,6 @@
 sensor-cmd temp E
 sensor-cmd cond C,0
 sensor-cmd ph C,0
+
+sensor-cmd cond RESPONSE,0
+sensor-cmd ph RESPONSE,0
