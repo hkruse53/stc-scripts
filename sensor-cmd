@@ -1,0 +1,17 @@
+#!/usr/bin/python3
+
+import atsci
+import sys
+
+BOARDS = {
+    "temp": atsci.TEMP,
+    "cond": atsci.COND,
+    "ph": atsci.PH,
+}
+
+board = BOARDS[sys.argv[1]]
+cmd = sys.argv[2]
+
+with atsci.AtSciSensor() as sensor:
+    sensor.switch(board)
+    sensor.write(cmd)
