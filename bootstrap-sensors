@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+
+# Disable continuous mode on all.
+sensor-cmd temp E
+sensor-cmd cond C,0
+sensor-cmd ph C,0
