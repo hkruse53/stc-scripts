@@ -55,11 +55,7 @@ class Record:
 class SignedRecord:
     __slots__ = ("record", "sig")
 
-    def __init__(self, record, password):
-        salt = "".join((record.format_loc(), record.format_key()))
-        key = hashlib.pbkdf2_hmac("sha256", password.encode("ascii"),
-            salt.encode("ascii"), 10000, 12)
-
+    def __init__(self, record, key):
         self.record = str(record)
         self.sig = hmac.new(key, self.record.encode("ascii"), hashlib.sha256)
 
