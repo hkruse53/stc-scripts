@@ -4,15 +4,31 @@ import atsci
 import sys
 import time
 
-STABILIZE_SECS = 30
+STABILIZE_SECS = 60
 
 def calibrate(cmd, cond):
     print("place sensor in {} solution".format(cond))
     input("press enter when ready")
 
+    print("entering continuous mode for {} minute(s)".format(STABILIZE_SECS))
+    sensor.write("C,1")
+
+    start = time.time()
+
+    while True:
+        elapsed = time.time() - start
+
+        if elapsed > STABILIZE_SECS:
+            break
+
+        time.sleep(1)
+
     print("calibrating for {}...".format(cond), end="")
     sensor.write("{},{}".format(cmd, cond))
     print("done")
+
+    # exit continuous mode.
+    sensor.write("C,0")
 
 try:
     probe = sys.argv[1]
