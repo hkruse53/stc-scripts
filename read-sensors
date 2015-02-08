@@ -15,5 +15,5 @@ with atsci.AtSciSensor() as sensor:
     sensor.write("T,{:.3f}".format(temp))
     ph = float(sensor.ask("R"))
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     print("{}\t{}\t{}\t{}".format(now, temp, cond, ph))
