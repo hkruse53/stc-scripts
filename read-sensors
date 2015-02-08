@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
-import RPi.GPIO as gpio
 import atsci
 import datetime
-import time
 
 with atsci.AtSciSensor() as sensor:
     sensor.switch(atsci.TEMP)
