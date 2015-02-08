@@ -61,3 +61,10 @@ class SignedRecord:
 
     def __str__(self):
         return "".join((self.record, self.sig.hexdigest()))
+
+if __name__ == "__main__":
+    import datetime
+    params = Params(("HF", 95), 1, 1)
+    record = Record(params, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0)
+    signed = SignedRecord(record, b'\xa8\x89z3!\xce\xd5~\x84W\xaf\xb7')
+    assert str(signed) == " HF 09500100012014-10-27 13:00:00+0000+ 20.20 4.123   359.0086f61764d68c2ce234fe436bd9eb6a71c5817894f89647ef45e385086fe872ec"
