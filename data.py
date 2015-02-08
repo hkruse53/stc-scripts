@@ -38,13 +38,10 @@ class Record:
         return "{:>3}{:>4}".format(self.params.loc[0],
                                    "{:03}".format(self.params.loc[1]))
 
-    def format_key(self):
-        return "{:03}".format(self.params.key)
-
     def __str__(self):
-        return "{}{}{:04}{}{}{:6.3f}{:9.2f}".format(
+        return "{}{:03}{:04}{}{}{:6.3f}{:9.2f}".format(
             self.format_loc(),
-            self.format_key(),
+            self.params.key,
             self.params.format,
             self.date.strftime("%Y-%m-%d %H:%M:%S+0000"),
             self.format_temp(self.temp),
