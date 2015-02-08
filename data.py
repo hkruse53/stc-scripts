@@ -35,7 +35,8 @@ class Record:
         return "{}{:6.2f}".format("-" if temp < 0 else "+", abs(temp))
 
     def format_loc(self):
-        return "{:>3}{:>4}".format(*self.params.loc)
+        return "{:>3}{:>4}".format(self.params.loc[0],
+                                   "{:03}".format(self.params.loc[1]))
 
     def format_key(self):
         return "{:03}".format(self.params.key)
