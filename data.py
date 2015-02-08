@@ -43,6 +43,9 @@ class Record:
             self.format_loc(),
             self.params.key,
             self.params.format,
+            # The spec calls for a timezone offset, but python doesn't come with
+            # timezone support and we will always use UTC, so this offset is
+            # just hard-coded.
             self.date.strftime("%Y-%m-%d %H:%M:%S+0000"),
             self.format_temp(self.temp),
             self.ph,
