@@ -38,7 +38,7 @@ class Key:
         return "{:03}".format(self.id)
 
 class Record:
-    __slots__ = ("fmt", "loc", "key", "date", "temp", "ph", "cond")
+    __slots__ = ["fmt", "loc", "key", "date", "temp", "ph", "cond"]
 
     def __init__(self, fmt, loc, key, date, temp, ph, cond):
         assert -999.995 < temp < 999.995
@@ -75,7 +75,7 @@ class Record:
         )
 
 class SignedRecord:
-    __slots__ = ("record", "sig")
+    __slots__ = ["record", "sig"]
 
     def __init__(self, record, key):
         self.record = str(record)
