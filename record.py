@@ -1,3 +1,5 @@
+import codecs
+import configparser
 import hashlib
 import hmac
 
@@ -37,18 +39,28 @@ class Key:
     def __str__(self):
         return "{:03}".format(self.id)
 
-class Record:
-    __slots__ = ["fmt", "loc", "key", "date", "temp", "ph", "cond"]
+class Config:
+    __slots__ = ["loc", "key", "fmt"]
 
-    def __init__(self, fmt, loc, key, date, temp, ph, cond):
+    def __init__(self, path):
+        parser = configparser.ConfigParser()
+        parser.read(path)
+
+        self.loc = data.Location(parser["location"]["id"],
+                                 int(parser["location"]["key"]))
+        self.key = data.Key(int(config["key"]["id"]),
+                            codecs.decode(config["key"]["bytes"], "hex_codec"))
+        self.fmt = data.Format(int(config["record"]["format"]))
+
+class Record:
+    __slots__ = ["cfg", "date", "temp", "ph", "cond"]
+
+    def __init__(self, cfg, date, temp, ph, cond):
         assert -999.995 < temp < 999.995
         assert 0 < ph < 99.9995
         assert 0 < cond < 999999.995
 
-        self.fmt = fmt
-        self.loc = loc
-        self.key = key
-
+        self.cfg = cfg
         self.date = date
         self.temp = temp
         self.ph = ph
@@ -62,9 +74,9 @@ class Record:
 
     def __str__(self):
         return "{}{}{}{}{}{:6.3f}{:9.2f}".format(
-            self.loc,
-            self.key,
-            self.fmt,
+            self.cfg.loc,
+            self.cfg.key,
+            self.cfg.fmt,
             # The spec calls for a timezone offset, but python doesn't come with
             # timezone support and we will always use UTC, so this offset is
             # just hard-coded.
@@ -77,19 +89,24 @@ class Record:
 class SignedRecord:
     __slots__ = ["record", "sig"]
 
-    def __init__(self, record, key):
+    def __init__(self, record, cfg):
         self.record = str(record)
-        self.sig = hmac.new(key.bytes, self.record.encode("ascii"), hashlib.sha256)
+        self.sig = hmac.new(cfg.key.bytes,
+            self.record.encode("ascii"), hashlib.sha256)
 
     def __str__(self):
         return "".join((self.record, self.sig.hexdigest()))
 
 if __name__ == "__main__":
     import datetime
-    loc = Location("HF", 95)
-    fmt = Format(1)
-    key = Key(1, b"\xa8\x89z3!\xce\xd5~\x84W\xaf\xb7")
 
-    record = Record(fmt, loc, key, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0)
-    signed = SignedRecord(record, key)
+    class Config:
+        def __init__(self):
+            self.loc = Location("HF", 95)
+            self.fmt = Format(1)
+            self.key = Key(1, b"\xa8\x89z3!\xce\xd5~\x84W\xaf\xb7")
+
+    cfg = Config()
+    record = Record(cfg, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0)
+    signed = SignedRecord(record, cfg)
     assert str(signed) == " HF 09500100012014-10-27 13:00:00+0000+ 20.20 4.123   359.0086f61764d68c2ce234fe436bd9eb6a71c5817894f89647ef45e385086fe872ec"
