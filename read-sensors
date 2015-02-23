@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 
 import datetime
+import os.path
 
-from dtnsense import atsci
+from dtnsense import atsci, site
+
+cfg = site.Config(os.path.expanduser("~/conf/site.conf"))
 
 with atsci.AtSciSensor() as sensor:
     sensor.switch(atsci.TEMP)
@@ -17,4 +20,8 @@ with atsci.AtSciSensor() as sensor:
     ph = float(sensor.ask("R"))
 
     now = datetime.datetime.utcnow()
-    print("{}\t{}\t{}\t{}".format(now, temp, cond, ph))
+
+    record = site.Record(cfg, now, temp, ph, cond)
+    signed = site.SignedRecord(record, cfg)
+
+    print(signed)
