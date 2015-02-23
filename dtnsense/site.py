@@ -46,11 +46,11 @@ class Config:
         parser = configparser.ConfigParser()
         parser.read(path)
 
-        self.loc = data.Location(parser["location"]["id"],
-                                 int(parser["location"]["key"]))
-        self.key = data.Key(int(config["key"]["id"]),
-                            codecs.decode(config["key"]["bytes"], "hex_codec"))
-        self.fmt = data.Format(int(config["record"]["format"]))
+        self.loc = Location(parser["location"]["id"],
+                            int(parser["location"]["key"]))
+        self.key = Key(int(parser["key"]["id"]),
+                       codecs.decode(parser["key"]["bytes"], "hex_codec"))
+        self.fmt = Format(int(parser["record"]["format"]))
 
 class Record:
     __slots__ = ["cfg", "date", "temp", "ph", "cond"]
