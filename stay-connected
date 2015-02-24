@@ -7,19 +7,10 @@ if [[ -z $SSID ]]; then
     exit 1
 fi
 
-coproc IW {
-    iw event
-}
-
 trap exit INT TERM
 
 while :; do
     wait-beacon "$SSID" || continue
-
-    { timeout 20 wait-line "new station" & } <&${IW[0]}
-
     join-adhoc "$SSID" || continue
-    wait -n || continue
-
     wait-disconnect
 done
