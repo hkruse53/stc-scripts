@@ -9,8 +9,23 @@ fi
 
 trap exit INT TERM
 
+wait_disconnect() {
+    while :; do
+        arping -I wlan0 -f -w 5 10.42.0.1 || break
+        sleep 15s
+    done
+}
+
+join_adhoc() {
+    # Make sure the interface is up.
+    ip link set wlan0 down
+    # Join the SSID on channel 1.
+    iwconfig wlan0 mode ad-hoc essid "$1" channel 1
+    ip link set wlan0 up
+}
+
 while :; do
     timeout 10s wait-beacon "$SSID" || continue
-    join-adhoc "$SSID" || continue
-    wait-disconnect || continue
+    join_adhoc "$SSID" || continue
+    wait_disconnect || continue
 done
