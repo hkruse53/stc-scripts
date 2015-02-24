@@ -9,8 +9,5 @@ fi
 
 # Make sure the interface is up.
 ip link set wlan0 up
-# Set up interface to be in adhoc/IBSS mode. This isn't supported by iw yet, so
-# it must be done with iwconfig.
-iwconfig wlan0 mode ad-hoc
 # Join the SSID on channel 1.
-iwconfig wlan0 essid "$SSID" channel 1
+iwconfig wlan0 mode ad-hoc essid "$SSID" channel 1
