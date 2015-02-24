@@ -12,5 +12,5 @@ trap exit INT TERM
 while :; do
     timeout 10s wait-beacon "$SSID" || continue
     join-adhoc "$SSID" || continue
-    wait-disconnect
+    wait-disconnect || continue
 done
