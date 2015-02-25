@@ -15,4 +15,4 @@ cmd = sys.argv[2]
 
 with atsci.AtSciSensor() as sensor:
     sensor.switch(board)
-    sensor.write(cmd)
+    print(sensor.ask(cmd).decode("ascii"))
