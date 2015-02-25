@@ -60,7 +60,7 @@ class Batcher:
                 self.records.append(line[:-1])
 
     def check(self):
-        if len(self.records) >= self.batch_size:
+        while len(self.records) >= self.batch_size:
             self.enqueue()
 
     def enqueue(self):
