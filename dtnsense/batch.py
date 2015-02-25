@@ -2,7 +2,6 @@ import gzip
 import os
 import pathlib
 import subprocess
-import tempfile
 
 class PlainFormatter:
     def format(self, records):
@@ -13,11 +12,13 @@ class GzipFormatter:
         return gzip.compress("\n".join(records).encode("utf8"))
 
 class DTN2Handler:
+    BUF_FILE = pathlib.Path(os.path.expanduser("~/.cache/dtn2.buf"))
+
     def __init__(self, expiration):
         self.expiration = expiration
 
     def handle(self, buf):
-        with tempfile.NamedTemporaryFile() as tf:
+        with self.BUF_FILE.open("wb") as tf:
             tf.write(buf)
             tf.flush()
 
