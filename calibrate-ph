@@ -5,13 +5,13 @@ import time
 
 from dtnsense import atsci
 
-STABILIZE_MINS = 2
+STABILIZE_SECS = 60
 
 def calibrate(cmd, ph):
     print("place sensor in the pH {} solution".format(ph))
     input("press enter when ready")
 
-    print("entering continuous mode for {} minute(s)".format(STABILIZE_MINS))
+    print("entering continuous mode for {} second(s)".format(STABILIZE_SECS))
     sensor.write("C,1")
 
     start = time.time()
@@ -19,7 +19,7 @@ def calibrate(cmd, ph):
     while True:
         elapsed = time.time() - start
 
-        if elapsed > STABILIZE_MINS * 60:
+        if elapsed > STABILIZE_SECS:
             break
 
         print("{:3}s: {:5}pH".format(int(elapsed), float(sensor.read())))
@@ -50,8 +50,8 @@ except ValueError:
     sys.exit(1)
 
 with atsci.AtSciSensor() as sensor:
-    print("letting temperature stabilize for {} minute(s)".format(
-        STABILIZE_MINS))
+    print("letting temperature stabilize for {} second(s)".format(
+        STABILIZE_SECS))
     sensor.switch(atsci.TEMP)
     sensor.write("C")
 
@@ -60,7 +60,7 @@ with atsci.AtSciSensor() as sensor:
     while True:
         elapsed = time.time() - start
 
-        if elapsed > STABILIZE_MINS * 60:
+        if elapsed > STABILIZE_SECS:
             break;
 
         print("{:3}s: {}C".format(int(elapsed), float(sensor.read())))
