@@ -60,6 +60,9 @@ class Daemon:
 
     def loop(self, delay):
         while True:
+            # Read before sleeping.
+            self.read()
+
             stop = time.time() + delay
 
             while True:
@@ -81,8 +84,6 @@ class Daemon:
                 # any extra bytes.
                 self.handle(conn.recv(1))
                 conn.close()
-
-            self.read()
 
     def handle(self, msg):
         if msg == b"F":
