@@ -3,7 +3,7 @@
 import argparse
 import datetime
 import os.path
-import select
+import socket
 import sys
 import time
 
@@ -34,8 +34,8 @@ class Reader:
         return signed
 
 class Daemon:
-    def __init__(self, fifo_path, batcher, reader):
-        self.fifo_path = fifo_path
+    def __init__(self, sock_path, batcher, reader):
+        self.sock_path = sock_path
         self.batcher = batcher
         self.reader = reader
 
@@ -44,17 +44,19 @@ class Daemon:
 
     def __enter__(self):
         try:
-            os.mkfifo(self.fifo_path)
-        except FileExistsError:
+            os.unlink(self.sock_path)
+        except FileNotFoundError:
             pass
 
-        self.fd = os.open(self.fifo_path, os.O_NONBLOCK | os.O_RDONLY)
+        self.sock = socket.socket(socket.AF_UNIX)
+        self.sock.bind(self.sock_path)
+        self.sock.listen(1)
 
         return self
 
     def __exit__(self, *args):
-        os.close(self.fd)
-        os.unlink(self.fifo_path)
+        self.sock.close()
+        os.unlink(self.sock_path)
 
     def loop(self, delay):
         while True:
@@ -66,13 +68,19 @@ class Daemon:
                 if remain <= 0:
                     break
 
-                r, w, x = select.select([self.fd], [], [], remain)
+                self.sock.settimeout(remain)
 
-                # If no fds are ready for reading, then the timeout was reached.
-                if len(r) == 0:
+                try:
+                    conn, _ = self.sock.accept()
+                except socket.timeout:
                     break
 
-                self.handle(os.read(self.fd, 1))
+                self.sock.settimeout(None)
+
+                # Our messages are only one byte long as this point, so discard
+                # any extra bytes.
+                self.handle(conn.recv(1))
+                conn.close()
 
             self.read()
 
@@ -83,21 +91,23 @@ class Daemon:
         raise ValueError("invalid message {}".format(msg))
 
 class Client:
-    def __init__(self, fifo_path):
-        self.fifo_path = fifo_path
+    def __init__(self, sock_path):
+        self.sock_path = sock_path
 
     def __enter__(self):
-        self.fd = os.open(self.fifo_path, os.O_NONBLOCK | os.O_WRONLY)
+        self.sock = socket.socket(socket.AF_UNIX)
+        self.sock.connect(self.sock_path)
+
         return self
 
     def __exit__(self, *args):
-        os.close(self.fd)
+        self.sock.close()
 
     def send(self, msg):
-        assert os.write(self.fd, msg) == len(msg)
+        assert self.sock.send(msg) == len(msg)
 
 class Main:
-    FIFO_PATH = "/tmp/sensord.socket"
+    SOCK_PATH = "/tmp/sensord.socket"
 
     def __init__(self, argv):
         self.args = self.parse(argv)
@@ -130,14 +140,14 @@ class Main:
                 return self.daemon(reader)
 
     def flush(self):
-        with Client(self.FIFO_PATH) as client:
+        with Client(self.SOCK_PATH) as client:
             client.send(b"F")
 
     def read(self, reader):
-        Daemon(self.FIFO_PATH, self.batcher, reader).read()
+        Daemon(self.SOCK_PATH, self.batcher, reader).read()
 
     def daemon(self, reader):
-        with Daemon(self.FIFO_PATH, self.batcher, reader) as daemon:
+        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
             try:
                 daemon.loop(self.args.delay)
             except KeyboardInterrupt:
