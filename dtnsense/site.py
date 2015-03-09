@@ -89,7 +89,7 @@ class Record:
 class SignedRecord:
     __slots__ = ["record", "sig"]
 
-    def __init__(self, record, cfg):
+    def __init__(self, cfg, record):
         self.record = str(record)
         self.sig = hmac.new(cfg.key.bytes,
             self.record.encode("ascii"), hashlib.sha256)

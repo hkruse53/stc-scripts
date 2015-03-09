@@ -29,7 +29,7 @@ class Reader:
         now = datetime.datetime.utcnow()
 
         record = site.Record(self.cfg, now, temp, ph, cond)
-        signed = site.SignedRecord(record, self.cfg)
+        signed = site.SignedRecord(self.cfg, record)
 
         return signed
 
