@@ -46,11 +46,11 @@ class Config:
         parser = configparser.ConfigParser()
         parser.read(path)
 
-        self.loc = Location(parser["location"]["id"],
-                            int(parser["location"]["key"]))
-        self.key = Key(int(parser["key"]["id"]),
-                       codecs.decode(parser["key"]["bytes"], "hex_codec"))
-        self.fmt = Format(int(parser["record"]["format"]))
+        self.loc = Location(parser["location"]["name"],
+                            int(parser["location"]["site"]))
+        self.key = Key(int(parser["signing"]["key_id"]),
+                       codecs.decode(parser["signing"]["key"], "hex_codec"))
+        self.fmt = Format(int(parser["record"]["format_id"]))
 
 class Record:
     __slots__ = ["cfg", "date", "temp", "ph", "cond"]
@@ -89,7 +89,7 @@ class Record:
 class SignedRecord:
     __slots__ = ["record", "sig"]
 
-    def __init__(self, record, cfg):
+    def __init__(self, cfg, record):
         self.record = str(record)
         self.sig = hmac.new(cfg.key.bytes,
             self.record.encode("ascii"), hashlib.sha256)

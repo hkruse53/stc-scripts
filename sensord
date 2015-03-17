@@ -1,0 +1,178 @@
+#!/usr/bin/python3
+
+import argparse
+import datetime
+import os.path
+import socket
+import sys
+import time
+
+from dtnsense import atsci, batch, site
+
+class Reader:
+    def __init__(self, cfg, sensor):
+        self.cfg = cfg
+        self.sensor = sensor
+
+    def read(self):
+        self.sensor.switch(atsci.TEMP)
+        temp = float(self.sensor.ask("R"))
+
+        self.sensor.switch(atsci.COND)
+        self.sensor.write("T,{:.3f}".format(temp))
+        cond, tds, sal, sg = (float(x) for x in self.sensor.ask("R").split(b","))
+
+        self.sensor.switch(atsci.PH)
+        self.sensor.write("T,{:.3f}".format(temp))
+        ph = float(self.sensor.ask("R"))
+
+        now = datetime.datetime.utcnow()
+
+        record = site.Record(self.cfg, now, temp, ph, cond)
+        signed = site.SignedRecord(self.cfg, record)
+
+        return signed
+
+class Daemon:
+    def __init__(self, sock_path, batcher, reader):
+        self.sock_path = sock_path
+        self.batcher = batcher
+        self.reader = reader
+
+    def read(self):
+        self.batcher.add(str(self.reader.read()))
+
+    def __enter__(self):
+        try:
+            os.unlink(self.sock_path)
+        except FileNotFoundError:
+            pass
+
+        self.sock = socket.socket(socket.AF_UNIX)
+        self.sock.bind(self.sock_path)
+        self.sock.listen(1)
+
+        return self
+
+    def __exit__(self, *args):
+        self.sock.close()
+        os.unlink(self.sock_path)
+
+    def loop(self, delay):
+        while True:
+            # Read before sleeping.
+            self.read()
+
+            stop = time.time() + delay
+
+            while True:
+                remain = stop - time.time()
+
+                if remain <= 0:
+                    break
+
+                self.sock.settimeout(remain)
+
+                try:
+                    conn, _ = self.sock.accept()
+                except socket.timeout:
+                    break
+
+                self.sock.settimeout(None)
+
+                # Our messages are only one byte long as this point, so discard
+                # any extra bytes.
+                self.handle(conn.recv(1))
+                conn.close()
+
+    def handle(self, msg):
+        if msg == b"F":
+            return self.batcher.flush()
+
+        raise ValueError("invalid message {}".format(msg))
+
+class Client:
+    def __init__(self, sock_path):
+        self.sock_path = sock_path
+
+    def __enter__(self):
+        self.sock = socket.socket(socket.AF_UNIX)
+        self.sock.connect(self.sock_path)
+
+        return self
+
+    def __exit__(self, *args):
+        self.sock.close()
+
+    def send(self, msg):
+        assert self.sock.send(msg) == len(msg)
+
+class Main:
+    SOCK_PATH = "/tmp/sensord.socket"
+
+    def __init__(self, argv):
+        self.args = self.parse(argv)
+        self.cfg = site.Config(os.path.expanduser(self.args.conf))
+
+        if self.args.gzip:
+            formatter = batch.GzipFormatter()
+        else:
+            formatter = batch.PlainFormatter()
+
+        if self.args.dry_run:
+            handler = batch.StdoutHandler()
+        else:
+            handler = batch.DTN2Handler(self.args.expiration)
+
+        self.batcher = batch.Batcher(formatter, handler, self.args.batch_size)
+
+    def run(self):
+        with atsci.AtSciSensor() as sensor:
+            reader = Reader(self.cfg, sensor)
+
+            if self.args.flush:
+                return self.flush()
+
+            self.batcher.check()
+
+            if self.args.delay is None:
+                return self.read(reader)
+            else:
+                return self.daemon(reader)
+
+    def flush(self):
+        with Client(self.SOCK_PATH) as client:
+            client.send(b"F")
+
+    def read(self, reader):
+        Daemon(self.SOCK_PATH, self.batcher, reader).read()
+
+    def daemon(self, reader):
+        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
+            try:
+                daemon.loop(self.args.delay)
+            except KeyboardInterrupt:
+                return
+
+    def parse(self, argv):
+        ap = argparse.ArgumentParser()
+
+        ap.add_argument("-c", "--conf", action="store", default="~/conf/site.conf",
+            help="path to configuration file (default: %(default)s)")
+        ap.add_argument("-d", "--delay", action="store", type=int,
+            help="seconds between readings (default: only read once)")
+        ap.add_argument("-z", "--gzip", action="store_true",
+            help="enable gzip compression of records batches (default: no)")
+        ap.add_argument("-n", "--dry-run", action="store_true",
+            help="don't send over DTN2, just print on stdout (default: no)")
+        ap.add_argument("-e", "--expiration", action="store", default=90 * 24 * 60 * 60,
+            help="set bundle expiration in seconds (default: %(default)s)")
+        ap.add_argument("-b", "--batch-size", action="store", type=int, default=96,
+            help="number of bundles to put in a batch (default: %(default)s)")
+        ap.add_argument("-f", "--flush", action="store_true",
+            help="flush any queued records")
+
+        return ap.parse_args(argv[1:])
+
+if __name__ == "__main__":
+    Main(sys.argv).run()

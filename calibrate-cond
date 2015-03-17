@@ -11,7 +11,7 @@ def calibrate(cmd, cond):
     print("place sensor in {} solution".format(cond))
     input("press enter when ready")
 
-    print("entering continuous mode for {} minute(s)".format(STABILIZE_SECS))
+    print("entering continuous mode for {} second(s)".format(STABILIZE_SECS))
     sensor.write("C,1")
 
     start = time.time()
