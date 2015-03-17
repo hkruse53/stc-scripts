@@ -114,10 +114,10 @@ class Main:
         self.args = self.parse(argv)
         self.cfg = site.Config(os.path.expanduser(self.args.conf))
 
-        if self.args.gzip:
-            formatter = batch.GzipFormatter()
-        else:
+        if self.args.no_gzip:
             formatter = batch.PlainFormatter()
+        else:
+            formatter = batch.GzipFormatter()
 
         if self.args.dry_run:
             handler = batch.StdoutHandler()
@@ -161,8 +161,8 @@ class Main:
             help="path to configuration file (default: %(default)s)")
         ap.add_argument("-d", "--delay", action="store", type=int,
             help="seconds between readings (default: only read once)")
-        ap.add_argument("-z", "--gzip", action="store_true",
-            help="enable gzip compression of records batches (default: no)")
+        ap.add_argument("-z", "--no-gzip", action="store_true",
+            help="disable gzip compression of records batches (default: enabled)")
         ap.add_argument("-n", "--dry-run", action="store_true",
             help="don't send over DTN2, just print on stdout (default: no)")
         ap.add_argument("-e", "--expiration", action="store", default=90 * 24 * 60 * 60,
