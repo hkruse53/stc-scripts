@@ -5,7 +5,7 @@ DEFAULT_TTY = "/dev/ttyAMA0"
 A_PIN = 18
 B_PIN = 16
 
-TEMP = (0, 0)
+TEMP = (1, 1)
 COND = (0, 1)
 PH = (1, 0)
 
