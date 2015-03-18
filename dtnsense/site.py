@@ -97,6 +97,7 @@ class SignedRecord:
         return "".join((self.record, self.sig.hexdigest()))
 
 if __name__ == "__main__":
+    # Here's the example from box.
     import datetime
 
     class Config:
@@ -106,6 +107,8 @@ if __name__ == "__main__":
             self.key = Key(1, b"\xa8\x89z3!\xce\xd5~\x84W\xaf\xb7")
 
     cfg = Config()
-    record = Record(cfg, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0)
+    record = Record(cfg, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0, "-0400")
     signed = SignedRecord(cfg, record)
-    assert str(signed) == " HF 09500100012014-10-27 13:00:00+0000+ 20.20 4.123   359.0086f61764d68c2ce234fe436bd9eb6a71c5817894f89647ef45e385086fe872ec"
+
+    print(signed)
+    assert str(signed) == " HF 09500100012014-10-27 13:00:00-0400+ 20.20 4.123   359.00aacb89f70d1fa3d38e7faeac711b105678eeba4edc2e7903e6454b6d06a457e8"
