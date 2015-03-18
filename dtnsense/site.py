@@ -53,9 +53,9 @@ class Config:
         self.fmt = Format(int(parser["record"]["format_id"]))
 
 class Record:
-    __slots__ = ["cfg", "date", "temp", "ph", "cond"]
+    __slots__ = ["cfg", "date", "temp", "ph", "cond", "tz"]
 
-    def __init__(self, cfg, date, temp, ph, cond):
+    def __init__(self, cfg, date, temp, ph, cond, tz="+0000"):
         assert -999.995 < temp < 999.995
         assert 0 < ph < 99.9995
         assert 0 < cond < 999999.995
@@ -65,6 +65,7 @@ class Record:
         self.temp = temp
         self.ph = ph
         self.cond = cond
+        self.tz = tz
 
     def format_temp(self, temp):
         # This has to be done this way because python's format strings include
@@ -73,14 +74,12 @@ class Record:
         return "{}{:6.2f}".format("-" if temp < 0 else "+", abs(temp))
 
     def __str__(self):
-        return "{}{}{}{}{}{:6.3f}{:9.2f}".format(
+        return "{}{}{}{}{}{}{:6.3f}{:9.2f}".format(
             self.cfg.loc,
             self.cfg.key,
             self.cfg.fmt,
-            # The spec calls for a timezone offset, but python doesn't come with
-            # timezone support and we will always use UTC, so this offset is
-            # just hard-coded.
-            self.date.strftime("%Y-%m-%d %H:%M:%S+0000"),
+            self.date.strftime("%Y-%m-%d %H:%M:%S"),
+            self.tz,
             self.format_temp(self.temp),
             self.ph,
             self.cond
