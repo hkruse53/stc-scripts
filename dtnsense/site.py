@@ -108,5 +108,5 @@ if __name__ == "__main__":
 
     cfg = Config()
     record = Record(cfg, datetime.datetime(2014,10,27,13,0,0), 20.20, 4.123, 359.0)
-    signed = SignedRecord(record, cfg)
+    signed = SignedRecord(cfg, record)
     assert str(signed) == " HF 09500100012014-10-27 13:00:00+0000+ 20.20 4.123   359.0086f61764d68c2ce234fe436bd9eb6a71c5817894f89647ef45e385086fe872ec"
