@@ -51,6 +51,7 @@ class AtSciSensor:
         self.tty = tty
 
     def __enter__(self):
+        gpio.setwarnings(False)
         gpio.setmode(gpio.BOARD)
         gpio.setup(18, gpio.OUT)
         gpio.setup(16, gpio.OUT)
