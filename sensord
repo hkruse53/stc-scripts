@@ -6,6 +6,7 @@ import os.path
 import socket
 import sys
 import time
+import traceback
 
 from dtnsense import atsci, batch, site
 
@@ -58,32 +59,40 @@ class Daemon:
         self.sock.close()
         os.unlink(self.sock_path)
 
+    def run(self, delay):
+        # Read before sleeping.
+        self.read()
+
+        stop = time.time() + delay
+
+        while True:
+            remain = stop - time.time()
+
+            if remain <= 0:
+                break
+
+            self.sock.settimeout(remain)
+
+            try:
+                conn, _ = self.sock.accept()
+            except socket.timeout:
+                break
+
+            self.sock.settimeout(None)
+
+            # Our messages are only one byte long as this point, so discard
+            # any extra bytes.
+            self.handle(conn.recv(1))
+            conn.close()
+
     def loop(self, delay):
         while True:
-            # Read before sleeping.
-            self.read()
-
-            stop = time.time() + delay
-
-            while True:
-                remain = stop - time.time()
-
-                if remain <= 0:
-                    break
-
-                self.sock.settimeout(remain)
-
-                try:
-                    conn, _ = self.sock.accept()
-                except socket.timeout:
-                    break
-
-                self.sock.settimeout(None)
-
-                # Our messages are only one byte long as this point, so discard
-                # any extra bytes.
-                self.handle(conn.recv(1))
-                conn.close()
+            try:
+                self.run(delay)
+            except KeyboardInterrupt:
+                return
+            except:
+                traceback.print_exc()
 
     def handle(self, msg):
         if msg == b"F":
@@ -149,10 +158,7 @@ class Main:
 
     def daemon(self, reader):
         with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
-            try:
-                daemon.loop(self.args.delay)
-            except KeyboardInterrupt:
-                return
+            daemon.loop(self.args.delay)
 
     def parse(self, argv):
         ap = argparse.ArgumentParser()
