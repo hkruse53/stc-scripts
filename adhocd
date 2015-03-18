@@ -26,6 +26,7 @@ join_adhoc() {
 
 while :; do
     timeout 10s wait-beacon "$SSID" || continue
+    adhocd.up 2>/dev/null
     join_adhoc "$SSID" || continue
     wait_disconnect || continue
 done
