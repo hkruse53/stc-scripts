@@ -16,17 +16,24 @@ wait_disconnect() {
     done
 }
 
-join_adhoc() {
-    # Make sure the interface is up.
-    ip link set wlan0 down
-    # Join the SSID on channel 1.
-    iwconfig wlan0 mode ad-hoc essid "$1" channel 1
-    ip link set wlan0 up
+wait_ssid() {
+    iwconfig wlan0 essid off
+
+    while :; do
+        sleep 5s
+        iwlist wlan0 scan | grep "\"$SSID\"" && break
+    done
+
+    iwconfig wlan0 essid "$SSID" channel 1
 }
 
+ip link set wlan0 down
+iwconfig wlan0 mode ad-hoc
+ip link set wlan0 up
+
 while :; do
-    timeout 10s wait-beacon "$SSID" || continue
+    wait_ssid || continue
+    sleep 10s
     adhocd.up 2>/dev/null
-    join_adhoc "$SSID" || continue
     wait_disconnect || continue
 done
