@@ -162,12 +162,14 @@ class Main:
 
         with atsci.AtSciSensor() as sensor:
             self.batcher.check()
+            self.daemonize(Reader(self.cfg, sensor))
 
-            with Daemon(self.SOCK_PATH, self.batcher, Reader(self.cfg, sensor)) as daemon:
-                if self.args.delay is None:
-                    daemon.read()
-                else:
-                    daemon.loop(self.args.delay)
+    def daemonize(self, reader):
+        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
+            if self.args.delay is None:
+                daemon.read()
+            else:
+                daemon.loop(self.args.delay)
 
     def flush(self):
         with Client(self.SOCK_PATH) as client:
