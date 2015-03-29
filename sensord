@@ -80,7 +80,7 @@ class Daemon:
 
             self.sock.settimeout(None)
 
-            # Our messages are only one byte long as this point, so discard
+            # Our messages are only one byte long at this point, so discard
             # any extra bytes.
             self.handle(conn.recv(1))
             conn.close()
