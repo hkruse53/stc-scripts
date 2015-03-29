@@ -37,6 +37,7 @@ class Reader:
         return signed
 
 class Daemon:
+    FLUSH_MSG = b"F"
     RELOAD_MSG = b"R"
     ACK_MSG = b"A"
 
@@ -104,7 +105,7 @@ class Daemon:
                 traceback.print_exc()
 
     def handle(self, conn, msg):
-        if msg == b"F":
+        if msg == self.FLUSH_MSG:
             return self.batcher.flush()
 
         if msg == self.RELOAD_MSG:
@@ -170,7 +171,7 @@ class Main:
 
     def flush(self):
         with Client(self.SOCK_PATH) as client:
-            client.send(b"F")
+            client.send(Daemon.FLUSH_MSG)
 
     def reload_config(self):
         with Client(self.SOCK_PATH) as client:
