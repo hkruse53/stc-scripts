@@ -40,11 +40,15 @@ class Key:
         return "{:03}".format(self.id)
 
 class Config:
-    __slots__ = ["loc", "key", "fmt"]
+    __slots__ = ["path", "loc", "key", "fmt"]
 
     def __init__(self, path):
+        self.path = path
+        self.reload()
+
+    def reload(self):
         parser = configparser.ConfigParser()
-        parser.read(path)
+        parser.read(self.path)
 
         self.loc = Location(parser["location"]["name"], parser["location"]["site"])
         self.key = Key(int(parser["signing"]["key_id"]),
