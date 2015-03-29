@@ -136,12 +136,11 @@ class Main:
         self.batcher = batch.Batcher(formatter, handler, self.args.batch_size)
 
     def run(self):
+        if self.args.flush:
+            return self.flush()
+
         with atsci.AtSciSensor() as sensor:
             reader = Reader(self.cfg, sensor)
-
-            if self.args.flush:
-                return self.flush()
-
             self.batcher.check()
 
             if self.args.delay is None:
