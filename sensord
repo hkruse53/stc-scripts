@@ -39,6 +39,7 @@ class Reader:
 class Daemon:
     FLUSH_MSG = b"F"
     RELOAD_MSG = b"R"
+    WAIT_MSG = b"W"
     ACK_MSG = b"A"
 
     def __init__(self, sock_path, batcher, reader):
@@ -113,6 +114,9 @@ class Daemon:
             conn.send(self.ACK_MSG)
             return
 
+        if msg == self.WAIT_MSG:
+            return conn.send(self.ACK_MSG)
+
         raise ValueError("invalid message {}".format(msg))
 
 class Client:
@@ -160,6 +164,9 @@ class Main:
         if self.args.reload_config:
             return self.reload_config()
 
+        if self.args.wait_ready:
+            return self.wait_ready()
+
         with atsci.AtSciSensor() as sensor:
             self.batcher.check()
             self.daemonize(Reader(self.cfg, sensor))
@@ -178,6 +185,11 @@ class Main:
     def reload_config(self):
         with Client(self.SOCK_PATH) as client:
             client.send(Daemon.RELOAD_MSG)
+            client.wait()
+
+    def wait_ready(self):
+        with Client(self.SOCK_PATH) as client:
+            client.send(Daemon.WAIT_MSG)
             client.wait()
 
     def parse(self, argv):
@@ -199,6 +211,8 @@ class Main:
             help="flush any queued records")
         ap.add_argument("-r", "--reload-config", action="store_true",
             help="reload config file")
+        ap.add_argument("-w", "--wait-ready", action="store_true",
+            help="wait until the daemon is configured and ready")
 
         return ap.parse_args(argv[1:])
 
