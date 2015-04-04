@@ -15,17 +15,17 @@ class Format:
         return "{:04}".format(self.id)
 
 class Location:
-    __slots__ = ["name", "num"]
+    __slots__ = ["name", "id"]
 
-    def __init__(self, name, num):
+    def __init__(self, name, id):
         assert len(name) <= 3
-        assert num <= 9999
+        assert len(id) <= 4
 
         self.name = name
-        self.num = num
+        self.id = id
 
     def __str__(self):
-        return "{:>3}{:>4}".format(self.name, "{:03}".format(self.num))
+        return "{:>3}{:>4}".format(self.name, self.id)
 
 class Key:
     __slots__ = ["id", "bytes"]
@@ -46,8 +46,7 @@ class Config:
         parser = configparser.ConfigParser()
         parser.read(path)
 
-        self.loc = Location(parser["location"]["name"],
-                            int(parser["location"]["site"]))
+        self.loc = Location(parser["location"]["name"], parser["location"]["site"])
         self.key = Key(int(parser["signing"]["key_id"]),
                        codecs.decode(parser["signing"]["key"], "hex_codec"))
         self.fmt = Format(int(parser["record"]["format_id"]))
