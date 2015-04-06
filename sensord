@@ -37,6 +37,11 @@ class Reader:
         return signed
 
 class Daemon:
+    FLUSH_MSG = b"F"
+    RELOAD_MSG = b"R"
+    WAIT_MSG = b"W"
+    ACK_MSG = b"A"
+
     def __init__(self, sock_path, batcher, reader):
         self.sock_path = sock_path
         self.batcher = batcher
@@ -88,7 +93,7 @@ class Daemon:
 
             # Our messages are only one byte long at this point, so discard
             # any extra bytes.
-            self.handle(conn.recv(1))
+            self.handle(conn, conn.recv(1))
             conn.close()
 
     def loop(self, delay):
@@ -100,9 +105,17 @@ class Daemon:
             except:
                 traceback.print_exc()
 
-    def handle(self, msg):
-        if msg == b"F":
+    def handle(self, conn, msg):
+        if msg == self.FLUSH_MSG:
             return self.batcher.flush()
+
+        if msg == self.RELOAD_MSG:
+            self.reader.cfg.reload()
+            conn.send(self.ACK_MSG)
+            return
+
+        if msg == self.WAIT_MSG:
+            return conn.send(self.ACK_MSG)
 
         raise ValueError("invalid message {}".format(msg))
 
@@ -121,6 +134,9 @@ class Client:
 
     def send(self, msg):
         assert self.sock.send(msg) == len(msg)
+
+    def wait(self):
+        assert self.sock.recv(1) == Daemon.ACK_MSG
 
 class Main:
     SOCK_PATH = "/tmp/sensord.socket"
@@ -145,25 +161,36 @@ class Main:
         if self.args.flush:
             return self.flush()
 
-        with atsci.AtSciSensor() as sensor:
-            reader = Reader(self.cfg, sensor)
-            self.batcher.check()
+        if self.args.reload_config:
+            return self.reload_config()
 
+        if self.args.wait_ready:
+            return self.wait_ready()
+
+        with atsci.AtSciSensor() as sensor:
+            self.batcher.check()
+            self.daemonize(Reader(self.cfg, sensor))
+
+    def daemonize(self, reader):
+        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
             if self.args.delay is None:
-                return self.read(reader)
+                daemon.read()
             else:
-                return self.daemon(reader)
+                daemon.loop(self.args.delay)
 
     def flush(self):
         with Client(self.SOCK_PATH) as client:
-            client.send(b"F")
+            client.send(Daemon.FLUSH_MSG)
 
-    def read(self, reader):
-        Daemon(self.SOCK_PATH, self.batcher, reader).read()
+    def reload_config(self):
+        with Client(self.SOCK_PATH) as client:
+            client.send(Daemon.RELOAD_MSG)
+            client.wait()
 
-    def daemon(self, reader):
-        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
-            daemon.loop(self.args.delay)
+    def wait_ready(self):
+        with Client(self.SOCK_PATH) as client:
+            client.send(Daemon.WAIT_MSG)
+            client.wait()
 
     def parse(self, argv):
         ap = argparse.ArgumentParser()
@@ -182,6 +209,10 @@ class Main:
             help="number of bundles to put in a batch (default: %(default)s)")
         ap.add_argument("-f", "--flush", action="store_true",
             help="flush any queued records")
+        ap.add_argument("-r", "--reload-config", action="store_true",
+            help="reload config file")
+        ap.add_argument("-w", "--wait-ready", action="store_true",
+            help="wait until the daemon is configured and ready")
 
         return ap.parse_args(argv[1:])
 
