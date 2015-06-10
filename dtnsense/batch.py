@@ -63,6 +63,9 @@ class Batcher:
             self.enqueue(self.batch_size)
 
     def enqueue(self, batch_size):
+        if batch_size == 0:
+            return
+
         if not self.BATCH_NEW_FILE.exists():
             self.handler.handle(self.formatter.format(
                 self.records[:batch_size]))
