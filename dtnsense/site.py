@@ -60,8 +60,8 @@ class Record:
 
     def __init__(self, cfg, date, temp, ph, cond, tz="+0000"):
         assert -999.995 < temp < 999.995
-        assert 0 < ph < 99.9995
-        assert 0 < cond < 999999.995
+        assert 0 <= ph < 99.9995
+        assert 0 <= cond < 999999.995
 
         self.cfg = cfg
         self.date = date
