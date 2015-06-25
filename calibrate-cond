@@ -3,7 +3,7 @@
 import sys
 import time
 
-from dtnsense import atsci
+from dtnsense import atsci, util
 
 STABILIZE_SECS = 60
 
@@ -48,7 +48,9 @@ except ValueError:
     print("error: arguments must be integers")
     sys.exit(1)
 
-with atsci.AtSciSensor() as sensor:
+with util.GPIOGuard():
+    sensor = atsci.AtSciSensor()
+
     print("letting temperature stabilize for {} second(s)".format(
         STABILIZE_SECS))
     sensor.switch(atsci.TEMP)

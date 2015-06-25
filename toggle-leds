@@ -2,7 +2,7 @@
 
 import sys
 
-from dtnsense import atsci
+from dtnsense import atsci, util
 
 def on(sensor):
     sensor.write("L,1")
@@ -25,7 +25,9 @@ try:
 except IndexError:
     fn = toggle
 
-with atsci.AtSciSensor() as sensor:
+with util.GPIOGuard():
+    sensor = atsci.AtSciSensor()
+
     sensor.switch(atsci.COND)
     fn(sensor)
 

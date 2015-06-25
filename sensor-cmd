@@ -2,7 +2,7 @@
 
 import sys
 
-from dtnsense import atsci
+from dtnsense import atsci, util
 
 BOARDS = {
     "temp": atsci.TEMP,
@@ -13,6 +13,7 @@ BOARDS = {
 board = BOARDS[sys.argv[1]]
 cmd = sys.argv[2]
 
-with atsci.AtSciSensor() as sensor:
+with util.GPIOGuard():
+    sensor = atsci.AtSciSensor()
     sensor.switch(board)
     print(sensor.ask(cmd).decode("ascii"))

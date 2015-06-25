@@ -10,7 +10,7 @@ import sys
 import time
 import traceback
 
-from dtnsense import atsci, batch, site
+from dtnsense import atsci, batch, site, util
 
 class Reader:
     def __init__(self, cfg, sensor):
@@ -167,9 +167,9 @@ class Main:
         if self.args.wait_ready:
             return self.wait_ready()
 
-        with atsci.AtSciSensor() as sensor:
+        with util.GPIOGuard():
             self.batcher.check()
-            self.daemonize(Reader(self.cfg, sensor))
+            self.daemonize(Reader(self.cfg, atsci.AtSciSensor()))
 
     def daemonize(self, reader):
         with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
