@@ -1,18 +1,12 @@
 #!/usr/bin/python3
 
-import argparse
 import datetime
-import os
 import os.path
-import socket
-import stat
 import sys
-import time
-import traceback
 
-from dtnsense import atsci, batch, site, util
+from dtnsense import atsci, site, daemon
 
-class Reader:
+class SensorReader(daemon.Reader):
     def __init__(self, cfg, sensor):
         self.cfg = cfg
         self.sensor = sensor
@@ -36,185 +30,58 @@ class Reader:
 
         return signed
 
-class Daemon:
-    FLUSH_MSG = b"F"
+class SensorDaemon(daemon.Daemon):
     RELOAD_MSG = b"R"
     WAIT_MSG = b"W"
-    ACK_MSG = b"A"
-
-    def __init__(self, sock_path, batcher, reader):
-        self.sock_path = sock_path
-        self.batcher = batcher
-        self.reader = reader
-
-    def read(self):
-        self.batcher.add(str(self.reader.read()))
-
-    def __enter__(self):
-        try:
-            os.unlink(self.sock_path)
-        except FileNotFoundError:
-            pass
-
-        self.sock = socket.socket(socket.AF_UNIX)
-        self.sock.bind(self.sock_path)
-
-        mode = stat.S_IMODE(os.stat(self.sock_path).st_mode)
-        os.chmod(self.sock_path, mode | stat.S_IWOTH)
-
-        self.sock.listen(1)
-
-        return self
-
-    def __exit__(self, *args):
-        self.sock.close()
-        os.unlink(self.sock_path)
-
-    def run(self, delay):
-        # Read before sleeping.
-        self.read()
-
-        stop = time.time() + delay
-
-        while True:
-            remain = stop - time.time()
-
-            if remain <= 0:
-                break
-
-            self.sock.settimeout(remain)
-
-            try:
-                conn, _ = self.sock.accept()
-            except socket.timeout:
-                break
-
-            self.sock.settimeout(None)
-
-            # Our messages are only one byte long at this point, so discard
-            # any extra bytes.
-            self.handle(conn, conn.recv(1))
-            conn.close()
-
-    def loop(self, delay):
-        while True:
-            try:
-                self.run(delay)
-            except KeyboardInterrupt:
-                return
-            except:
-                traceback.print_exc()
 
     def handle(self, conn, msg):
-        if msg == self.FLUSH_MSG:
-            return self.batcher.flush()
-
         if msg == self.RELOAD_MSG:
             self.reader.cfg.reload()
-            conn.send(self.ACK_MSG)
-            return
+            return self.ack()
 
         if msg == self.WAIT_MSG:
-            return conn.send(self.ACK_MSG)
+            return self.ack()
 
-        raise ValueError("invalid message {}".format(msg))
+        return super().handle(conn, msg)
 
-class Client:
-    def __init__(self, sock_path):
-        self.sock_path = sock_path
-
-    def __enter__(self):
-        self.sock = socket.socket(socket.AF_UNIX)
-        self.sock.connect(self.sock_path)
-
-        return self
-
-    def __exit__(self, *args):
-        self.sock.close()
-
-    def send(self, msg):
-        assert self.sock.send(msg) == len(msg)
-
-    def wait(self):
-        assert self.sock.recv(1) == Daemon.ACK_MSG
-
-class Main:
-    SOCK_PATH = "/tmp/sensord.socket"
-
+class Main(daemon.Main):
     def __init__(self, argv):
-        self.args = self.parse(argv)
+        super().__init__(argv, "/tmp/sensord.socket")
+
         self.cfg = site.Config(os.path.expanduser(self.args.conf))
 
-        if self.args.no_gzip:
-            formatter = batch.PlainFormatter()
-        else:
-            formatter = batch.GzipFormatter()
-
-        if self.args.dry_run:
-            handler = batch.StdoutHandler()
-        else:
-            handler = batch.DTN2Handler(self.args.expiration)
-
-        self.batcher = batch.Batcher(formatter, handler, self.args.batch_size)
-
     def run(self):
-        if self.args.flush:
-            return self.flush()
-
         if self.args.reload_config:
             return self.reload_config()
 
         if self.args.wait_ready:
             return self.wait_ready()
 
-        with util.GPIOGuard():
-            self.batcher.check()
-            self.daemonize(Reader(self.cfg, atsci.AtSciSensor()))
+        super().run()
 
-    def daemonize(self, reader):
-        with Daemon(self.SOCK_PATH, self.batcher, reader) as daemon:
-            if self.args.delay is None:
-                daemon.read()
-            else:
-                daemon.loop(self.args.delay)
-
-    def flush(self):
-        with Client(self.SOCK_PATH) as client:
-            client.send(Daemon.FLUSH_MSG)
+    def daemon(self):
+        return SensorDaemon(self.sock_path, self.batcher, SensorReader(
+            self.cfg, atsci.AtSciSensor()))
 
     def reload_config(self):
-        with Client(self.SOCK_PATH) as client:
-            client.send(Daemon.RELOAD_MSG)
+        with Client(self.sock_path) as client:
+            client.send(SensorDaemon.RELOAD_MSG)
             client.wait()
 
     def wait_ready(self):
-        with Client(self.SOCK_PATH) as client:
-            client.send(Daemon.WAIT_MSG)
+        with Client(self.sock_path) as client:
+            client.send(SensorDaemon.WAIT_MSG)
             client.wait()
 
-    def parse(self, argv):
-        ap = argparse.ArgumentParser()
-
+    def add_args(self, ap):
         ap.add_argument("-c", "--conf", action="store", default="~/conf/site.conf",
             help="path to configuration file (default: %(default)s)")
-        ap.add_argument("-d", "--delay", action="store", type=int,
-            help="seconds between readings (default: only read once)")
-        ap.add_argument("-z", "--no-gzip", action="store_true",
-            help="disable gzip compression of records batches (default: enabled)")
-        ap.add_argument("-n", "--dry-run", action="store_true",
-            help="don't send over DTN2, just print on stdout (default: no)")
-        ap.add_argument("-e", "--expiration", action="store", default=90 * 24 * 60 * 60,
-            help="set bundle expiration in seconds (default: %(default)s)")
-        ap.add_argument("-b", "--batch-size", action="store", type=int, default=75,
-            help="number of bundles to put in a batch (default: %(default)s)")
-        ap.add_argument("-f", "--flush", action="store_true",
-            help="flush any queued records")
         ap.add_argument("-r", "--reload-config", action="store_true",
             help="reload config file")
         ap.add_argument("-w", "--wait-ready", action="store_true",
             help="wait until the daemon is configured and ready")
 
-        return ap.parse_args(argv[1:])
+        super().add_args(ap)
 
 if __name__ == "__main__":
     Main(sys.argv).run()
