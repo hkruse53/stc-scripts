@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+
+import sys
+
+from dtnsense import adc, daemon
+
+class VoltageReader(daemon.Reader):
+    def __init__(self, adc):
+        self.adc = adc
+
+    def read(self):
+        return self.adc.read()
+
+class Main(daemon.Main):
+    def __init__(self, argv):
+        super().__init__(argv, "/tmp/voltaged.socket")
+
+    def daemon(self):
+        return daemon.Daemon(self.sock_path, self.batcher, VoltageReader(
+            adc.ADC(0, 14.0)))
+
+if __name__ == "__main__":
+    Main(sys.argv).run()
