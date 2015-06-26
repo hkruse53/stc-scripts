@@ -4,12 +4,13 @@ import datetime
 import os.path
 import sys
 
-from dtnsense import atsci, site, records, daemon
+from dtnsense import atsci, site, records, daemon, adc
 
 class SensorReader(daemon.Reader):
-    def __init__(self, cfg, sensor):
+    def __init__(self, cfg, sensor, adc):
         self.cfg = cfg
         self.sensor = sensor
+        self.adc = adc
 
     def read(self):
         self.sensor.switch(atsci.TEMP)
@@ -24,8 +25,9 @@ class SensorReader(daemon.Reader):
         ph = float(self.sensor.ask("R"))
 
         now = datetime.datetime.utcnow()
+        volts = self.adc.read()
 
-        record = records.RecordFormat0002(self.cfg, now, temp, ph, cond)
+        record = records.RecordFormat0003(volts, self.cfg, now, temp, ph, cond)
         signed = records.SignedRecord(self.cfg, record)
 
         return signed
@@ -61,7 +63,7 @@ class Main(daemon.Main):
 
     def daemon(self):
         return SensorDaemon(self.sock_path, self.batcher, SensorReader(
-            self.cfg, atsci.AtSciSensor()))
+            self.cfg, atsci.AtSciSensor(), adc.ADC(0, 14.0)))
 
     def reload_config(self):
         with Client(self.sock_path) as client:
