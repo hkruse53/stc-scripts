@@ -4,7 +4,7 @@ import datetime
 import os.path
 import sys
 
-from dtnsense import atsci, site, daemon
+from dtnsense import atsci, site, records, daemon
 
 class SensorReader(daemon.Reader):
     def __init__(self, cfg, sensor):
@@ -25,8 +25,8 @@ class SensorReader(daemon.Reader):
 
         now = datetime.datetime.utcnow()
 
-        record = site.Record(self.cfg, now, temp, ph, cond)
-        signed = site.SignedRecord(self.cfg, record)
+        record = records.Record(self.cfg, now, temp, ph, cond)
+        signed = records.SignedRecord(self.cfg, record)
 
         return signed
 
