@@ -2,6 +2,13 @@ import hashlib
 import hmac
 
 class Record:
+    def fields(self):
+        raise NotImplementedError
+
+    def __str__(self):
+        return "".join(self.fields())
+
+class RecordFormat0001(Record):
     __slots__ = ["cfg", "date", "temp", "ph", "cond", "tz"]
 
     def __init__(self, cfg, date, temp, ph, cond, tz="+0000"):
@@ -22,17 +29,15 @@ class Record:
         # number should be padded.
         return "{}{:6.2f}".format("-" if temp < 0 else "+", abs(temp))
 
-    def __str__(self):
-        return "{}{}{}{}{}{}{:6.3f}{:9.2f}".format(
-            self.cfg.loc,
-            self.cfg.key,
-            self.cfg.fmt,
-            self.date.strftime("%Y-%m-%d %H:%M:%S"),
-            self.tz,
-            self.format_temp(self.temp),
-            self.ph,
-            self.cond
-        )
+    def fields(self):
+        yield str(self.cfg.loc)
+        yield str(self.cfg.key)
+        yield str(self.cfg.fmt)
+        yield self.date.strftime("%Y-%m-%d %H:%M:%S")
+        yield self.tz
+        yield self.format_temp(self.temp)
+        yield "{:6.3f}".format(self.ph)
+        yield "{:9.2f}".format(self.cond)
 
 class SignedRecord:
     __slots__ = ["record", "sig"]
