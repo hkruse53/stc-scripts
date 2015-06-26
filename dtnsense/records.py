@@ -39,6 +39,19 @@ class RecordFormat0001(Record):
         yield "{:6.3f}".format(self.ph)
         yield "{:9.2f}".format(self.cond)
 
+class RecordFormat0002(RecordFormat0001):
+    def __init__(self, voltage, *args):
+        super().__init__(*args)
+
+        assert 0 <= voltage < 99.95
+        self.voltage = voltage
+
+    def fields(self):
+        for field in super().fields():
+            yield field
+
+        yield "{:4.1f}".format(self.voltage)
+
 class SignedRecord:
     __slots__ = ["record", "sig"]
 
