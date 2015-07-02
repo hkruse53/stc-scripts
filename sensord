@@ -25,7 +25,7 @@ class SensorReader(daemon.Reader):
 
         now = datetime.datetime.utcnow()
 
-        record = records.RecordFormat0001(self.cfg, now, temp, ph, cond)
+        record = records.RecordFormat0002(self.cfg, now, temp, ph, cond)
         signed = records.SignedRecord(self.cfg, record)
 
         return signed
