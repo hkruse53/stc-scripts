@@ -23,11 +23,11 @@ class RecordFormat0001(Record):
         self.cond = cond
         self.tz = tz
 
-    def format_temp(self, temp):
+    def format_signed(self, fmt, num):
         # This has to be done this way because python's format strings include
         # the +/- in the width of the field, where in the spec it says only the
         # number should be padded.
-        return "{}{:6.2f}".format("-" if temp < 0 else "+", abs(temp))
+        return "{}{}".format("-" if num < 0 else "+", fmt.format(abs(num)))
 
     def fields(self):
         yield str(self.cfg.loc)
@@ -35,7 +35,7 @@ class RecordFormat0001(Record):
         yield str(self.cfg.fmt)
         yield self.date.strftime("%Y-%m-%d %H:%M:%S")
         yield self.tz
-        yield self.format_temp(self.temp)
+        yield self.format_signed("{:6.2f}", self.temp)
         yield "{:6.3f}".format(self.ph)
         yield "{:9.2f}".format(self.cond)
 
