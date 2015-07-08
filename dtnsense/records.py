@@ -22,6 +22,9 @@ class RecordFormat0001(Record):
         self.cond = cond
         self.tz = tz
 
+    def format_id(self):
+        return 1
+
     def verify_temp(self, temp):
         assert -999.995 < temp < 999.995
 
@@ -38,7 +41,7 @@ class RecordFormat0001(Record):
     def fields(self):
         yield str(self.cfg.loc)
         yield str(self.cfg.key)
-        yield str(self.cfg.fmt)
+        yield "{:04}".format(self.format_id())
         yield self.date.strftime("%Y-%m-%d %H:%M:%S")
         yield self.tz
 
@@ -66,12 +69,18 @@ class RecordFormat0002(RecordFormat0001):
         yield self.format_signed("{:6.3f}", self.ph)
         yield self.format_signed("{:9.2f}", self.cond)
 
+    def format_id(self):
+        return 2
+
 class RecordFormat0003(RecordFormat0002):
     def __init__(self, voltage, *args):
         super().__init__(*args)
 
         assert 0 <= voltage < 99.95
         self.voltage = voltage
+
+    def format_id(self):
+        return 3
 
     def fields(self):
         for field in super().fields():

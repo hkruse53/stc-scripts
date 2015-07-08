@@ -1,17 +1,6 @@
 import codecs
 import configparser
 
-class Format:
-    __slots__ = ["id"]
-
-    def __init__(self, id):
-        assert id <= 9999
-
-        self.id = id
-
-    def __str__(self):
-        return "{:04}".format(self.id)
-
 class Location:
     __slots__ = ["name", "id"]
 
@@ -38,7 +27,7 @@ class Key:
         return "{:03}".format(self.id)
 
 class Config:
-    __slots__ = ["path", "loc", "key", "fmt"]
+    __slots__ = ["path", "loc", "key"]
 
     def __init__(self, path):
         self.path = path
@@ -51,4 +40,3 @@ class Config:
         self.loc = Location(parser["location"]["name"], parser["location"]["site"])
         self.key = Key(int(parser["signing"]["key_id"]),
                        codecs.decode(parser["signing"]["key"], "hex_codec"))
-        self.fmt = Format(int(parser["record"]["format_id"]))
