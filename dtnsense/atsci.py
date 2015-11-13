@@ -9,6 +9,9 @@ TEMP = (1, 1)
 COND = (0, 1)
 PH = (1, 0)
 
+class TimeoutError(Exception):
+    pass
+
 class AtSciSensor(serial.Serial):
     def __init__(self, tty=DEFAULT_TTY):
         gpio.setup(A_PIN, gpio.OUT)
@@ -19,7 +22,7 @@ class AtSciSensor(serial.Serial):
         gpio.output(A_PIN, gpio.HIGH)
         gpio.output(B_PIN, gpio.HIGH)
 
-        super().__init__(tty, 38400)
+        super().__init__(tty, baudrate=38400, timeout=20)
 
         # The Pi's UART board sends an 0xFF byte every time the tty is opened,
         # so send a carriage to flush any sensors that are listening for a
@@ -33,6 +36,9 @@ class AtSciSensor(serial.Serial):
     def _read_bytes(self):
         while True:
             byte = super().read()
+
+            if byte == b"":
+                raise TimeoutError()
 
             if byte == b"\r":
                 return
