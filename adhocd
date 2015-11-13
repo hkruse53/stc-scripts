@@ -9,9 +9,19 @@ fi
 
 trap exit INT TERM
 
+check_connection() {
+    arping -I wlan0 -f -w 5 10.42.0.1
+}
+
+wait_connection_init() {
+    for _ in {0..1}; do
+	check_connection && break
+    done
+}
+
 wait_disconnect() {
     while :; do
-        arping -I wlan0 -f -w 5 10.42.0.1 || break
+        check_connection || break
         sleep 15s
     done
 }
@@ -33,7 +43,7 @@ ip link set wlan0 up
 
 while :; do
     wait_ssid || continue
-    sleep 10s
+    wait_connection_init || continue
     adhocd.up 2>/dev/null
     wait_disconnect || continue
 done
