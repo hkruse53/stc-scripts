@@ -5,7 +5,7 @@ import time
 
 from dtnsense import atsci, util
 
-STABILIZE_SECS = 60
+STABILIZE_SECS = 120
 
 def calibrate(cmd, cond):
     print("place sensor in {} solution".format(cond))
@@ -52,7 +52,7 @@ with util.GPIOGuard():
     sensor = atsci.AtSciSensor()
 
     print("letting temperature stabilize for {} second(s)".format(
-        STABILIZE_SECS))
+        STABILIZE_SECS/10))
     sensor.switch(atsci.TEMP)
     sensor.write("C")
 
@@ -61,7 +61,7 @@ with util.GPIOGuard():
     while True:
         elapsed = time.time() - start
 
-        if elapsed > STABILIZE_SECS:
+        if elapsed > STABILIZE_SECS/10:
             break;
 
         print("{:3}s: {}C".format(int(elapsed), float(sensor.read())))
